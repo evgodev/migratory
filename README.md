@@ -155,7 +155,6 @@ go install github.com/korfairo/migratory/cmd/migratory
 | `-d, --db string` | Database connection string | |
 | `--dir string` | Directory with .sql migration files | `.` |
 | `-h, --help` | Show help for migratory | |
-| `-s, --schema string` | Name of the database schema with migrations table | `public` |
 | `-t, --table string` | Name of the migrations table | `migrations` |
 
 You can find detailed information about all commands using the `--help` or `-h` flag.
@@ -166,9 +165,9 @@ All commands can use a YAML configuration file. Create a configuration file and 
 
 Example configuration:
 
+// TODO dialect
 ```yaml
 directory: /path/to/directory
 dsn: postgres://user:password@localhost:5432/my_db
-schema: public
 table: migrations
 ```

@@ -9,17 +9,15 @@ import (
 )
 
 type Config struct {
-	Dir    string `yaml:"directory"`
-	DSN    string `yaml:"dsn"`
-	Schema string `yaml:"schema"`
-	Table  string `yaml:"table"`
+	Dir   string `yaml:"directory"`
+	DSN   string `yaml:"dsn"`
+	Table string `yaml:"table"`
 }
 
 var defaultConfig = Config{
-	Dir:    ".",
-	DSN:    "",
-	Schema: "public",
-	Table:  "migrations",
+	Dir:   ".",
+	DSN:   "",
+	Table: "migrations",
 }
 
 var (
@@ -50,10 +48,6 @@ func setDefaultValues(cfg *Config) {
 		cfg.Dir = defaultConfig.Dir
 	}
 
-	if cfg.Schema == "" {
-		cfg.Schema = defaultConfig.Schema
-	}
-
 	if cfg.Table == "" {
 		cfg.Table = defaultConfig.Table
 	}
@@ -62,6 +56,5 @@ func setDefaultValues(cfg *Config) {
 func expandConfig(cfg *Config) {
 	cfg.Dir = os.ExpandEnv(cfg.Dir)
 	cfg.DSN = os.ExpandEnv(cfg.DSN)
-	cfg.Schema = os.ExpandEnv(cfg.Schema)
 	cfg.Table = os.ExpandEnv(cfg.Table)
 }

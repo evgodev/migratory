@@ -9,7 +9,7 @@ import (
 	"github.com/korfairo/migratory/internal/sqlmigration"
 )
 
-func rollback(dir, schema, table string, redo bool) error {
+func rollback(dir, table string, redo bool) error {
 	db, err := sql.Open("postgres", config.DSN)
 	if err != nil {
 		return fmt.Errorf("could not open database: %w", err)
@@ -28,12 +28,12 @@ func rollback(dir, schema, table string, redo bool) error {
 	}
 
 	ctx := context.Background()
-	migrator, err := migrator.New(ctx, db, "postgres", schema, table)
+	m, err := migrator.New(ctx, db, "postgres", table)
 	if err != nil {
 		return fmt.Errorf("failed to create migrator: %w", err)
 	}
 
-	if err = migrator.Down(ctx, migrations, db, redo); err != nil {
+	if err = m.Down(ctx, migrations, db, redo); err != nil {
 		return fmt.Errorf("failed to execute migration: %w", err)
 	}
 

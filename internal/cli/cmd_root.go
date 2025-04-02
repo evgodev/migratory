@@ -41,8 +41,6 @@ func init() {
 		"directory with .sql migration files")
 	rootCmd.PersistentFlags().StringVarP(&config.DSN, "db", "d", "",
 		"database connection string")
-	rootCmd.PersistentFlags().StringVarP(&config.Schema, "schema", "s", "public",
-		"name of database schema with migrations table")
 	rootCmd.PersistentFlags().StringVarP(&config.Table, "table", "t", "migrations",
 		"name of migrations table")
 

@@ -23,7 +23,7 @@ func Up(db *sql.DB, opts ...OptionsFunc) (n int, err error) {
 // It returns the number of migrations applied and any error encountered during the process.
 func UpContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (n int, err error) {
 	option := applyOptions(opts)
-	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
+	m, err := migrator.New(ctx, db, option.dialect, option.table)
 	if err != nil {
 		return 0, err
 	}
@@ -85,7 +85,7 @@ func GetStatus(db *sql.DB, opts ...OptionsFunc) ([]MigrationResult, error) {
 // and returns a list of MigrationResult with their details.
 func GetStatusContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) ([]MigrationResult, error) {
 	option := applyOptions(opts)
-	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
+	m, err := migrator.New(ctx, db, option.dialect, option.table)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func GetDBVersion(db *sql.DB, opts ...OptionsFunc) (int64, error) {
 // The database version is represented by the ID of the last applied migration.
 func GetDBVersionContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (int64, error) {
 	option := applyOptions(opts)
-	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
+	m, err := migrator.New(ctx, db, option.dialect, option.table)
 	if err != nil {
 		return -1, err
 	}
@@ -153,7 +153,7 @@ func getMigrations(migrationType, directory string) (m migrator.Migrations, err 
 
 func rollback(ctx context.Context, db *sql.DB, redo bool, opts []OptionsFunc) error {
 	option := applyOptions(opts)
-	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
+	m, err := migrator.New(ctx, db, option.dialect, option.table)
 	if err != nil {
 		return err
 	}

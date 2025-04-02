@@ -10,7 +10,6 @@ type options struct {
 	migrationType string
 	directory     string
 	dialect       string
-	schema        string
 	table         string
 
 	forceUp bool
@@ -20,7 +19,6 @@ var defaultOpts = options{
 	migrationType: migrationTypeGo,
 	dialect:       dialectPostgres,
 	directory:     ".",
-	schema:        "public",
 	table:         "migrations",
 	forceUp:       false,
 }
@@ -37,11 +35,6 @@ func WithSQLMigrationDir(d string) OptionsFunc {
 	return func(o *options) { o.migrationType = migrationTypeSQL; o.directory = d }
 }
 
-// WithSchema sets the schema name for the options configuration.
-func WithSchema(n string) OptionsFunc {
-	return func(o *options) { o.schema = n }
-}
-
 // WithTable configures a custom table name for tracking migrations within the database.
 func WithTable(n string) OptionsFunc {
 	return func(o *options) { o.table = n }
@@ -51,9 +44,6 @@ func WithTable(n string) OptionsFunc {
 func WithForce() OptionsFunc {
 	return func(o *options) { o.forceUp = true }
 }
-
-// SetSchema updates the default schema used in database migrations.
-func SetSchema(s string) { defaultOpts.schema = s }
 
 // SetTable updates the default table name used for managing migrations.
 func SetTable(s string) { defaultOpts.table = s }

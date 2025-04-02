@@ -19,8 +19,8 @@ type Migrator struct {
 	store *store
 }
 
-func New(ctx context.Context, db *sql.DB, dialect, schemaName, tableName string) (*Migrator, error) {
-	store, err := newStore(dialect, schemaName, tableName)
+func New(ctx context.Context, db *sql.DB, dialect, tableName string) (*Migrator, error) {
+	store, err := newStore(dialect, tableName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get store: %w", err)
 	}
