@@ -11,16 +11,21 @@ import (
 	"github.com/korfairo/migratory/internal/sqlmigration"
 )
 
+// GoMigrateFn defines a function type for performing database migrations using a context and transaction.
 type GoMigrateFn func(ctx context.Context, tx *sql.Tx) error
 
+// AddMigration registers a new migration with `up` and `down` functions for handling database schema changes.
 func AddMigration(up, down GoMigrateFn) {
 	_, fileName, _, _ := runtime.Caller(1) //nolint:dogsled
 	executor := newGoExecutor(up, down)
 	addGoMigration(fileName, executor)
 }
 
+// GoMigrateNoTxFn defines a function type for non-transactional database migrations
+// using a context and a SQL database connection.
 type GoMigrateNoTxFn func(ctx context.Context, db *sql.DB) error
 
+// AddMigrationNoTx registers a database migration function pair that operates without transactions.
 func AddMigrationNoTx(up, down GoMigrateNoTxFn) {
 	_, fileName, _, _ := runtime.Caller(1) //nolint:dogsled
 	executorNoTx := newGoExecutorNoTx(up, down)

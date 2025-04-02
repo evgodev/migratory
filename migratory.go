@@ -10,85 +10,19 @@ import (
 	"github.com/korfairo/migratory/internal/sqlmigration"
 )
 
-type options struct {
-	migrationType string
-	directory     string
-	dialect       string
-	schema        string
-	table         string
+var ErrUnsupportedMigrationType = errors.New("migration type is unsupported")
 
-	forceUp bool
-}
-
-type OptionsFunc func(o *options)
-
-func applyOptions(optionsFns []OptionsFunc) options {
-	opts := defaultOptions()
-	for _, apply := range optionsFns {
-		apply(&opts)
-	}
-	return opts
-}
-
-func WithGoMigration() OptionsFunc {
-	return func(o *options) { o.migrationType = MigrationTypeGo }
-}
-
-func WithSQLMigrationDir(d string) OptionsFunc {
-	return func(o *options) { o.migrationType = MigrationTypeSQL; o.directory = d }
-}
-
-func WithSchema(n string) OptionsFunc {
-	return func(o *options) { o.schema = n }
-}
-
-func WithTable(n string) OptionsFunc {
-	return func(o *options) { o.table = n }
-}
-
-func WithForce() OptionsFunc {
-	return func(o *options) { o.forceUp = true }
-}
-
-var defaultOpts = options{
-	migrationType: MigrationTypeGo,
-	dialect:       DialectPostgres,
-	directory:     ".",
-	schema:        "public",
-	table:         "migrations",
-	forceUp:       false,
-}
-
-func defaultOptions() options {
-	return defaultOpts
-}
-
-func SetSchema(s string) { defaultOpts.schema = s }
-
-func SetTable(s string) { defaultOpts.table = s }
-
-func SetSQLDirectory(path string) {
-	defaultOpts.migrationType = MigrationTypeSQL
-	defaultOpts.directory = path
-}
-
-const (
-	MigrationTypeGo  = "go"
-	MigrationTypeSQL = "sql"
-)
-
-const (
-	DialectPostgres = "postgres"
-)
-
+// Up applies all available database migrations in order, using the given database connection and optional configurations.
 func Up(db *sql.DB, opts ...OptionsFunc) (n int, err error) {
 	ctx := context.Background()
 	return UpContext(ctx, db, opts...)
 }
 
+// UpContext applies any pending database migrations using the provided context, database connection, and options.
+// It returns the number of migrations applied and any error encountered during the process.
 func UpContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (n int, err error) {
 	option := applyOptions(opts)
-	migrator, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
+	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
 	if err != nil {
 		return 0, err
 	}
@@ -98,7 +32,7 @@ func UpContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (n int, err
 		return 0, err
 	}
 
-	appliedCount, err := migrator.Up(ctx, migrations, db, option.forceUp)
+	appliedCount, err := m.Up(ctx, migrations, db, option.forceUp)
 	if err != nil {
 		return appliedCount, err
 	}
@@ -106,24 +40,29 @@ func UpContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (n int, err
 	return appliedCount, nil
 }
 
+// Down rolls back the most recently applied migration in the database. Accepts optional configuration via OptionsFunc.
 func Down(db *sql.DB, opts ...OptionsFunc) error {
 	ctx := context.Background()
 	return DownContext(ctx, db, opts...)
 }
 
+// DownContext rolls back database migrations using the provided context, database connection, and optional configuration.
 func DownContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) error {
 	return rollback(ctx, db, false, opts)
 }
 
+// Redo rolls back and re-applies the last migration in the database using the provided options.
 func Redo(db *sql.DB, opts ...OptionsFunc) error {
 	ctx := context.Background()
 	return RedoContext(ctx, db, opts...)
 }
 
+// RedoContext re-applies the most recently rolled back migration within the provided context and database connection.
 func RedoContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) error {
 	return rollback(ctx, db, true, opts)
 }
 
+// MigrationResult represents the result of a migration, including its ID, name, application status, and applied timestamp.
 type MigrationResult struct {
 	ID        int64
 	Name      string
@@ -131,14 +70,16 @@ type MigrationResult struct {
 	AppliedAt time.Time
 }
 
+// GetStatus retrieves the migration status from the database, including applied status and application time for each migration.
 func GetStatus(db *sql.DB, opts ...OptionsFunc) ([]MigrationResult, error) {
 	ctx := context.Background()
 	return GetStatusContext(ctx, db, opts...)
 }
 
+// GetStatusContext retrieves the migration status from the database and returns a list of MigrationResult with their details.
 func GetStatusContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) ([]MigrationResult, error) {
 	option := applyOptions(opts)
-	migrator, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
+	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +89,7 @@ func GetStatusContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) ([]M
 		return nil, err
 	}
 
-	results, err := migrator.GetStatus(ctx, migrations, db)
+	results, err := m.GetStatus(ctx, migrations, db)
 	if err != nil {
 		return nil, err
 	}
@@ -166,19 +107,25 @@ func GetStatusContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) ([]M
 	return migrationResults, nil
 }
 
+// GetDBVersion retrieves the current database schema version based on the migrations table.
+// The database version is represented by the ID of the last applied migration.
+// Takes an *sql.DB instance and optional configuration through OptionsFunc.
+// Returns the schema version as an int64 or an error if retrieval fails.
 func GetDBVersion(db *sql.DB, opts ...OptionsFunc) (int64, error) {
 	ctx := context.Background()
 	return GetDBVersionContext(ctx, db, opts...)
 }
 
+// GetDBVersionContext retrieves the current database version by querying the migrations metadata table.
+// The database version is represented by the ID of the last applied migration.
 func GetDBVersionContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (int64, error) {
 	option := applyOptions(opts)
-	migrator, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
+	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
 	if err != nil {
 		return -1, err
 	}
 
-	version, err := migrator.GetDBVersion(ctx, db)
+	version, err := m.GetDBVersion(ctx, db)
 	if err != nil {
 		return -1, err
 	}
@@ -186,13 +133,11 @@ func GetDBVersionContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (
 	return version, nil
 }
 
-var ErrUnsupportedMigrationType = errors.New("migration type is unsupported")
-
 func getMigrations(migrationType, directory string) (m migrator.Migrations, err error) {
 	switch migrationType {
-	case MigrationTypeGo:
+	case migrationTypeGo:
 		m, err = registerGoMigrations(globalGoMigrations)
-	case MigrationTypeSQL:
+	case migrationTypeSQL:
 		m, err = sqlmigration.SeekMigrations(directory, nil)
 	default:
 		return nil, ErrUnsupportedMigrationType
@@ -202,7 +147,7 @@ func getMigrations(migrationType, directory string) (m migrator.Migrations, err 
 
 func rollback(ctx context.Context, db *sql.DB, redo bool, opts []OptionsFunc) error {
 	option := applyOptions(opts)
-	migrator, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
+	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
 	if err != nil {
 		return err
 	}
@@ -212,7 +157,7 @@ func rollback(ctx context.Context, db *sql.DB, redo bool, opts []OptionsFunc) er
 		return err
 	}
 
-	if err = migrator.Down(ctx, migrations, db, redo); err != nil {
+	if err = m.Down(ctx, migrations, db, redo); err != nil {
 		return err
 	}
 
