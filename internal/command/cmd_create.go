@@ -19,7 +19,7 @@ The command writes current UTC time as a migration id, for example: 200601021504
 migratory create my_migration sql
 migratory create my_migration sql -d ./example/migrations`,
 	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := create(config.Dir, args[0], args[1]); err != nil {
 			fmt.Printf("unable to create template: %s\n", err)
 			os.Exit(1)

@@ -75,35 +75,7 @@ func TestParseSplitStatements(t *testing.T) {
 		downCount int
 	}{
 		"complex": {
-			sql:       complexMigration,
-			upCount:   6,
-			downCount: 4,
-		},
-		"noUp": {
-			sql:       noUpMigration,
-			upCount:   0,
-			downCount: 1,
-		},
-		"noDown": {
-			sql:       noDownMigration,
-			upCount:   1,
-			downCount: 0,
-		},
-	}
-
-	for name, test := range tests {
-		test := test
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			migration, err := ParseMigration(strings.NewReader(test.sql))
-			require.NoError(t, err, "ParseMigration(...)")
-			require.Int(t, len(migration.UpStatements), test.upCount, "UpStatements count")
-			require.Int(t, len(migration.DownStatements), test.downCount, "DownStatements count")
-		})
-	}
-}
-
-var complexMigration = `
+			sql: `
 -- +migrate up no_transaction
 -- sql comment #1
 CREATE TABLE products (
@@ -155,9 +127,21 @@ DROP TABLE products;
 DROP TABLE departments
 ;
 DROP TABLE employees;
-`
-
-var noDownMigration = `
+`,
+			upCount:   6,
+			downCount: 4,
+		},
+		"noUp": {
+			sql: `
+-- finally added down statement
+-- +migrate down
+DROP TABLE users;
+`,
+			upCount:   0,
+			downCount: 1,
+		},
+		"noDown": {
+			sql: `
 -- +migrate up
 -- no time to add down statement, will do later
 CREATE TABLE users (
@@ -166,13 +150,23 @@ CREATE TABLE users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL
 );
-`
+`,
+			upCount:   1,
+			downCount: 0,
+		},
+	}
 
-var noUpMigration = `
--- finally added down statement
--- +migrate down
-DROP TABLE users;
-`
+	for name, test := range tests {
+		test := test
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			migration, err := ParseMigration(strings.NewReader(test.sql))
+			require.NoError(t, err, "ParseMigration(...)")
+			require.Int(t, len(migration.UpStatements), test.upCount, "UpStatements count")
+			require.Int(t, len(migration.DownStatements), test.downCount, "DownStatements count")
+		})
+	}
+}
 
 func getDirectoryFilenames(t *testing.T, path string) []string {
 	t.Helper()

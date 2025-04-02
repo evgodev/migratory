@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/sqlmigration"
 	"github.com/spf13/cobra"
 )
@@ -25,7 +25,7 @@ Additionally, the command will create the migrations table if it does not alread
 	Example: `migratory up -c /etc/config.yml
 migratory up -d postgresql://role:password@127.0.0.1:5432/database --dir example/migrations/
 migratory up -d postgresql://role:password@127.0.0.1:5432/database --dir migrations/ -t my_migrations_table`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		force, err := cmd.Flags().GetBool("force")
 		if err != nil {
 			fmt.Println("failed to get bool --force flag")
@@ -72,7 +72,7 @@ func up(dir, schema, table string, force bool) (int, error) {
 	}
 
 	ctx := context.Background()
-	migrator, err := gomigrator.New(ctx, db, "postgres", schema, table)
+	migrator, err := migrator.New(ctx, db, "postgres", schema, table)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create migrator: %w", err)
 	}

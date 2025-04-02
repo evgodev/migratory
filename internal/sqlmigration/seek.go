@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 )
 
 var (
@@ -28,9 +28,9 @@ type FileSystem interface {
 
 // SeekMigrations searches for .sql migration files in directory.
 //
-// It parses file names and returns gomigrator.Migrations sorted by version ascending.
-func SeekMigrations(dir string, fs FileSystem) (gomigrator.Migrations, error) {
-	var migrations gomigrator.Migrations
+// It parses file names and returns migrator.Migrations sorted by version ascending.
+func SeekMigrations(dir string, fs FileSystem) (migrator.Migrations, error) {
+	var migrations migrator.Migrations
 	if fs == nil {
 		fs = osWrapper{}
 	}
@@ -62,7 +62,7 @@ func SeekMigrations(dir string, fs FileSystem) (gomigrator.Migrations, error) {
 		uniqueIDMap[id] = struct{}{}
 
 		migrations = append(migrations,
-			gomigrator.NewMigrationWithPreparer(id, name, newSQLPreparer(filePath, fs)))
+			migrator.NewMigrationWithPreparer(id, name, newSQLPreparer(filePath, fs)))
 	}
 
 	sort.Slice(migrations, func(i, j int) bool {

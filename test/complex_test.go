@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/korfairo/migratory"
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/require"
 	_ "github.com/korfairo/migratory/test/testdata"
 	_ "github.com/lib/pq"
@@ -106,7 +106,7 @@ func TestGoMigrations(t *testing.T) {
 	}
 
 	err = migratory.Down(db)
-	require.ErrorIs(t, err, gomigrator.ErrNothingToRollback, "migratory.Down(...) error")
+	require.ErrorIs(t, err, migrator.ErrNothingToRollback, "migratory.Down(...) error")
 }
 
 func getLastMigrationResult(t *testing.T, db *sql.DB) (id int64, at time.Time) {

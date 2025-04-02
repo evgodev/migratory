@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/require"
 )
 
@@ -21,7 +21,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 		fields         fields
 		migrationData  []byte
 		createTestFile func(t *testing.T, files *tmpFiles)
-		want           *gomigrator.ExecutorContainer
+		want           *migrator.ExecutorContainer
 		wantErr        bool
 	}{
 		"opening error": {
@@ -55,7 +55,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 					"SELECT COUNT(2);"
 				files.Create(t, "02_tmp_migration.sql", data)
 			},
-			want: gomigrator.NewExecutorContainer(
+			want: migrator.NewExecutorTxContainer(
 				newSQLExecutor(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
@@ -75,7 +75,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 					"SELECT COUNT(2);"
 				files.Create(t, "03_tmp_migration.sql", data)
 			},
-			want: gomigrator.NewExecutorContainerNoTx(
+			want: migrator.NewExecutorDBContainer(
 				newSQLExecutorNoTx(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ from migrations table in your database. Command creates migrations table if not 
 	Example: `migratory dbversion -c /etc/config.yml
 migratory dbversion -d postgresql://role:password@127.0.0.1:5432/database
 migratory dbversion -d postgresql://role:password@127.0.0.1:5432/database -s my_schema -t my_migrations_table`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		version, err := getDBVersion(config.Schema, config.Table)
 		if err != nil {
 			fmt.Printf("unable to get database version: %s\n", err)
@@ -46,7 +46,7 @@ func getDBVersion(schema, table string) (int64, error) {
 	}()
 
 	ctx := context.Background()
-	migrator, err := gomigrator.New(ctx, db, "postgres", schema, table)
+	migrator, err := migrator.New(ctx, db, "postgres", schema, table)
 	if err != nil {
 		return 0, fmt.Errorf("could not create migrator: %w", err)
 	}

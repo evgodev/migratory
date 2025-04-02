@@ -1,9 +1,9 @@
-package gomigrator
+package migrator
 
 import (
 	"testing"
 
-	"github.com/korfairo/migratory/internal/gomigrator/dialect"
+	"github.com/korfairo/migratory/internal/migrator/dialect"
 	"github.com/korfairo/migratory/internal/require"
 )
 
@@ -15,7 +15,7 @@ func TestNewStore(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args    args
-		want    Store
+		want    *store
 		wantErr error
 	}{
 		"existing dialect": {
@@ -23,7 +23,7 @@ func TestNewStore(t *testing.T) {
 				dbDialect:  DialectPostgres,
 				schemaName: "public",
 				tableName:  "migrations",
-			}, want: migrationStore{
+			}, want: &store{
 				"public",
 				"migrations",
 				&dialect.Postgres{},

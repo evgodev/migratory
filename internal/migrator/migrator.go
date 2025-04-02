@@ -1,4 +1,4 @@
-package gomigrator
+package migrator
 
 import (
 	"context"
@@ -16,7 +16,7 @@ var (
 )
 
 type Migrator struct {
-	store Store
+	store *store
 }
 
 func New(ctx context.Context, db *sql.DB, dialect, schemaName, tableName string) (*Migrator, error) {
@@ -25,13 +25,13 @@ func New(ctx context.Context, db *sql.DB, dialect, schemaName, tableName string)
 		return nil, fmt.Errorf("failed to get store: %w", err)
 	}
 
-	exists, err := store.MigrationsTableExists(ctx, db)
+	exists, err := store.migrationsTableExists(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if migrations table exists: %w", err)
 	}
 
 	if !exists {
-		if err = store.CreateMigrationsTable(ctx, db); err != nil {
+		if err = store.createMigrationsTable(ctx, db); err != nil {
 			return nil, fmt.Errorf("failed to create migrations table: %w", err)
 		}
 	}
@@ -40,7 +40,7 @@ func New(ctx context.Context, db *sql.DB, dialect, schemaName, tableName string)
 }
 
 func (m Migrator) Up(ctx context.Context, migrations Migrations, db *sql.DB, force bool) (n int, err error) {
-	dbMigrations, err := m.store.ListMigrations(ctx, db)
+	dbMigrations, err := m.store.listMigrations(ctx, db)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get migrations results from database: %w", err)
 	}
@@ -88,7 +88,7 @@ func (m Migrator) Down(ctx context.Context, migrations Migrations, db *sql.DB, r
 }
 
 func (m Migrator) GetStatus(ctx context.Context, migrations Migrations, db *sql.DB) ([]MigrationResult, error) {
-	dbMigrations, err := m.store.ListMigrations(ctx, db)
+	dbMigrations, err := m.store.listMigrations(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get migrations results from database: %w", err)
 	}
@@ -112,7 +112,7 @@ func (m Migrator) GetStatus(ctx context.Context, migrations Migrations, db *sql.
 }
 
 func (m Migrator) GetDBVersion(ctx context.Context, db *sql.DB) (int64, error) {
-	lastVersion, err := m.store.SelectLastID(ctx, db)
+	lastVersion, err := m.store.selectLastID(ctx, db)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
 			return -1, ErrUnknownDBVersion
@@ -142,14 +142,14 @@ func (m Migrator) upTx(ctx context.Context, migration Migration, db *sql.DB) err
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	if err = migration.Up(ctx, tx); err != nil {
+	if err = migration.UpTx(ctx, tx); err != nil {
 		if txErr := tx.Rollback(); txErr != nil {
 			return fmt.Errorf("failed to up migration and rollback transaction: %w; %w", err, txErr)
 		}
 		return fmt.Errorf("failed to up migration: %w", err)
 	}
 
-	if err = m.store.InsertMigration(ctx, tx, migration.Name(), migration.ID()); err != nil {
+	if err = m.store.insertMigration(ctx, tx, migration.Name(), migration.ID()); err != nil {
 		if txErr := tx.Rollback(); txErr != nil {
 			return fmt.Errorf("failed to insert migration in table and rollback transaction: %w; %w", err, txErr)
 		}
@@ -164,11 +164,11 @@ func (m Migrator) upTx(ctx context.Context, migration Migration, db *sql.DB) err
 }
 
 func (m Migrator) upNoTx(ctx context.Context, migration Migration, db *sql.DB) error {
-	if err := migration.UpNoTx(ctx, db); err != nil {
+	if err := migration.UpDB(ctx, db); err != nil {
 		return fmt.Errorf("failed to up migration: %w", err)
 	}
 
-	if err := m.store.InsertMigration(ctx, db, migration.Name(), migration.ID()); err != nil {
+	if err := m.store.insertMigration(ctx, db, migration.Name(), migration.ID()); err != nil {
 		return fmt.Errorf("failed to insert migration in table: %w", err)
 	}
 
@@ -194,14 +194,14 @@ func (m Migrator) downTx(ctx context.Context, migration *Migration, db *sql.DB) 
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	if err = migration.Down(ctx, tx); err != nil {
+	if err = migration.DownTx(ctx, tx); err != nil {
 		if txErr := tx.Rollback(); txErr != nil {
 			return fmt.Errorf("failed to down migration and rollback transaction: %w; %w", err, txErr)
 		}
 		return fmt.Errorf("failed to down migration: %w", err)
 	}
 
-	if err = m.store.DeleteMigration(ctx, tx, migration.ID()); err != nil {
+	if err = m.store.deleteMigration(ctx, tx, migration.ID()); err != nil {
 		if txErr := tx.Rollback(); txErr != nil {
 			return fmt.Errorf("failed to delete migration in table and rollback transaction: %w; %w", err, txErr)
 		}
@@ -216,11 +216,11 @@ func (m Migrator) downTx(ctx context.Context, migration *Migration, db *sql.DB) 
 }
 
 func (m Migrator) downNoTx(ctx context.Context, migration *Migration, db *sql.DB) error {
-	if err := migration.DownNoTx(ctx, db); err != nil {
+	if err := migration.DownDB(ctx, db); err != nil {
 		return fmt.Errorf("failed to down migration: %w", err)
 	}
 
-	if err := m.store.DeleteMigration(ctx, db, migration.ID()); err != nil {
+	if err := m.store.deleteMigration(ctx, db, migration.ID()); err != nil {
 		return fmt.Errorf("failed to delete migration from table: %w", err)
 	}
 
@@ -228,7 +228,7 @@ func (m Migrator) downNoTx(ctx context.Context, migration *Migration, db *sql.DB
 }
 
 func (m Migrator) getLastMigration(ctx context.Context, ms Migrations, db *sql.DB) (*Migration, error) {
-	lastID, err := m.store.SelectLastID(ctx, db)
+	lastID, err := m.store.selectLastID(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current database version: %w", err)
 	}
@@ -243,18 +243,18 @@ func (m Migrator) getLastMigration(ctx context.Context, ms Migrations, db *sql.D
 }
 
 func findMissingMigrations(migrations Migrations, results []MigrationResult) (missing Migrations, dirty bool) {
-	appliedIds := make(map[int64]struct{}, len(results))
+	appliedIDs := make(map[int64]struct{}, len(results))
 	var maxID int64
 
 	for _, r := range results {
-		appliedIds[r.ID] = struct{}{}
+		appliedIDs[r.ID] = struct{}{}
 		if r.ID > maxID {
 			maxID = r.ID
 		}
 	}
 
 	for _, migration := range migrations {
-		if _, exists := appliedIds[migration.ID()]; exists {
+		if _, exists := appliedIDs[migration.ID()]; exists {
 			continue
 		}
 		if migration.ID() < maxID {
