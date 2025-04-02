@@ -1,3 +1,0 @@
-directory: [ /path/to/directory]
-dsn = postgres://user:password@localhost:5432/mydb
-table migrations

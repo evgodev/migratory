@@ -70,3 +70,30 @@ func Time(t *testing.T, got, want time.Time, msg string) {
 		t.Fatalf("%s: unexpected string value: got %s, want: %s", msg, got, want)
 	}
 }
+
+func Nil(t *testing.T, got any, msg string) {
+	t.Helper()
+	if !isNil(got) {
+		t.Fatalf("%s: got %v, want nil", msg, got)
+	}
+	return
+}
+
+// isNil checks if a specified object is nil or not, without Failing.
+func isNil(object interface{}) bool {
+	if object == nil {
+		return true
+	}
+
+	value := reflect.ValueOf(object)
+	switch value.Kind() {
+	case
+		reflect.Chan, reflect.Func,
+		reflect.Interface, reflect.Map,
+		reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
+
+		return value.IsNil()
+	}
+
+	return false
+}
