@@ -8,16 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
-)
-
-const (
-	commandPrefix         = "-- +migrate"
-	commandUp             = "up"
-	commandDown           = "down"
-	commandStatementBegin = "statement_begin"
-	commandStatementEnd   = "statement_end"
-	optionNoTransaction   = "no_transaction"
 )
 
 var (
@@ -41,166 +31,126 @@ type ParsedMigration struct {
 // ParseMigration parses SQL migration scripts into up and down statements, handling specific commands and identifiers.
 // It returns a ParsedMigration with the parsed statements and transactions configuration or an error on failure.
 func ParseMigration(r io.Reader) (*ParsedMigration, error) {
-	pm := &ParsedMigration{}
+	p := newParser(r)
+	if err := p.parseLines(); err != nil {
+		return nil, fmt.Errorf("failed to parse lines: %w", err)
+	}
 
-	var buf bytes.Buffer
-	scanner := bufio.NewScanner(r)
+	result, err := p.getResult()
+	if err != nil {
+		return nil, fmt.Errorf("failed to finalize parsing: %w", err)
+	}
 
-	var statementStarted bool
-	var statementEnded bool
-	currentDirection := directionNone
+	return result, nil
+}
 
-	for scanner.Scan() {
-		line := scanner.Text()
+type parser struct {
+	scanner *bufio.Scanner
+	buffer  *bytes.Buffer
+	state   *parsingState
+	result  *ParsedMigration
+}
 
-		if isEmpty(line) || (isSQLComment(line) && !isCommand(line)) {
+func newParser(r io.Reader) *parser {
+	return &parser{
+		scanner: bufio.NewScanner(r),
+		buffer:  &bytes.Buffer{},
+		state:   newParsingState(),
+		result:  &ParsedMigration{},
+	}
+}
+
+func (p *parser) parseLines() error {
+	for p.scanner.Scan() {
+		line := p.scanner.Text()
+
+		if isEmpty(line) || isSQLComment(line) {
 			continue
 		}
 
 		if isCommand(line) {
-			cmd, err := parseCommand(line)
-			if err != nil {
-				return nil, err
+			if err := p.handleCommand(line); err != nil {
+				return err
 			}
-
-			switch cmd.command {
-			case commandUp:
-				if buf.Len() > 0 {
-					return nil, ErrNoSemicolon
-				}
-				currentDirection = directionUp
-				if cmd.hasOption(optionNoTransaction) {
-					pm.DisableTransactionUp = true
-				}
-
-			case commandDown:
-				if buf.Len() > 0 {
-					return nil, ErrNoSemicolon
-				}
-				currentDirection = directionDown
-				if cmd.hasOption(optionNoTransaction) {
-					pm.DisableTransactionDown = true
-				}
-
-			case commandStatementBegin:
-				if currentDirection != directionNone {
-					statementStarted = true
-				}
-
-			case commandStatementEnd:
-				if !statementStarted {
-					return nil, ErrStatementNotStarted
-				}
-				if currentDirection != directionNone {
-					statementEnded = true
-					statementStarted = false
-				}
-
-			default:
-				return nil, ErrUnknownCommand
+		} else {
+			if err := p.writeToBuffer(line); err != nil {
+				return err
 			}
 		}
 
-		if currentDirection == directionNone {
-			continue
-		}
-
-		if !isCommand(line) {
-			if _, err := buf.WriteString(line + "\n"); err != nil {
-				return nil, fmt.Errorf("failed to write string to buffer: %w", err)
-			}
-		}
-
-		if (!statementStarted && endsWithSemicolon(line)) || statementEnded {
-			if currentDirection == directionUp {
-				pm.UpStatements = append(pm.UpStatements, buf.String())
+		if p.state.isStatementEnded() || (p.state.isStatementNone() && endsWithSemicolon(line)) {
+			if p.state.direction == directionUp {
+				p.result.UpStatements = append(p.result.UpStatements, p.buffer.String())
 			} else {
-				pm.DownStatements = append(pm.DownStatements, buf.String())
+				p.result.DownStatements = append(p.result.DownStatements, p.buffer.String())
 			}
 
-			statementEnded = false
-			buf.Reset()
+			p.state.setStatementNone()
+			p.buffer.Reset()
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to scan strings: %w", err)
+	if err := p.scanner.Err(); err != nil {
+		return fmt.Errorf("failed to scan strings: %w", err)
 	}
 
-	if statementStarted {
+	return nil
+}
+
+func (p *parser) handleCommand(line string) error {
+	cmd, err := newCommand(line)
+	if err != nil {
+		return err
+	}
+
+	switch cmd.body {
+	case commandUp:
+		if p.buffer.Len() > 0 {
+			return ErrNoSemicolon
+		}
+		p.state.setDirectionUp()
+		if cmd.hasOption(optionNoTransaction) {
+			p.result.DisableTransactionUp = true
+		}
+
+	case commandDown:
+		if p.buffer.Len() > 0 {
+			return ErrNoSemicolon
+		}
+		p.state.setDirectionDown()
+		if cmd.hasOption(optionNoTransaction) {
+			p.result.DisableTransactionDown = true
+		}
+
+	case commandStatementBegin:
+		p.state.setStatementStarted()
+
+	case commandStatementEnd:
+		return p.state.setStatementEnded()
+
+	default:
+		return ErrUnknownCommand
+	}
+
+	return nil
+}
+
+func (p *parser) getResult() (*ParsedMigration, error) {
+	if p.state.statement == statementStarted {
 		return nil, ErrStatementNotEnded
 	}
-
-	if buf.Len() > 0 {
-		return nil, ErrNoSemicolon
-	}
-
-	if currentDirection == directionNone {
+	if p.state.direction == directionNone {
 		return nil, ErrNoUpDownCommands
 	}
-
-	return pm, nil
-}
-
-func endsWithSemicolon(line string) bool {
-	scanner := bufio.NewScanner(strings.NewReader(line))
-	scanner.Split(bufio.ScanWords)
-
-	prev := ""
-	for scanner.Scan() {
-		word := scanner.Text()
-		if strings.HasPrefix(word, "--") {
-			break
-		}
-		prev = word
+	if p.buffer.Len() > 0 {
+		return nil, ErrNoSemicolon
 	}
-
-	return strings.HasSuffix(prev, ";")
+	return p.result, nil
 }
 
-type migrationDirection int
-
-const (
-	directionNone migrationDirection = iota
-	directionUp
-	directionDown
-)
-
-type migrateCommand struct {
-	command string
-	options []string
-}
-
-func parseCommand(line string) (*migrateCommand, error) {
-	fields := strings.Fields(strings.TrimPrefix(line, commandPrefix))
-	if len(fields) == 0 {
-		return nil, ErrIncompleteCommand
+func (p *parser) writeToBuffer(line string) error {
+	if _, err := p.buffer.WriteString(line + "\n"); err != nil {
+		return fmt.Errorf("failed to write string to buffer: %w", err)
 	}
-
-	return &migrateCommand{
-		command: fields[0],
-		options: fields[1:],
-	}, nil
-}
-
-func (c *migrateCommand) hasOption(option string) bool {
-	for _, o := range c.options {
-		if o == option {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isCommand(line string) bool {
-	return strings.HasPrefix(line, commandPrefix)
-}
-
-func isSQLComment(line string) bool {
-	return strings.HasPrefix(line, "--")
-}
-
-func isEmpty(line string) bool {
-	return strings.TrimSpace(line) == ""
+	return nil
 }
