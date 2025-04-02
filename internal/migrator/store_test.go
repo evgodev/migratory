@@ -1,9 +1,9 @@
-package gomigrator
+package migrator
 
 import (
 	"testing"
 
-	"github.com/korfairo/migratory/internal/gomigrator/dialect"
+	"github.com/korfairo/migratory/internal/migrator/dialect"
 	"github.com/korfairo/migratory/internal/require"
 )
 

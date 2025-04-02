@@ -1,4 +1,4 @@
-package gomigrator
+package migrator
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/korfairo/migratory/internal/gomigrator/dialect"
+	"github.com/korfairo/migratory/internal/migrator/dialect"
 )
 
 const DialectPostgres = "postgres"

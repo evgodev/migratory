@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/sqlmigration"
 )
 
@@ -94,13 +94,13 @@ func (g goExecutorNoTx) Down(ctx context.Context, db *sql.DB) error {
 	return g.downFn(ctx, db)
 }
 
-func registerGoMigrations(goMigrations []goMigration) (gomigrator.Migrations, error) {
+func registerGoMigrations(goMigrations []goMigration) (migrator.Migrations, error) {
 	goMigrationsCount := len(goMigrations)
 	if goMigrationsCount == 0 {
 		return nil, errors.New("no migrations were added")
 	}
 
-	var migrations gomigrator.Migrations
+	var migrations migrator.Migrations
 	uniqueIDMap := make(map[int64]struct{}, goMigrationsCount)
 	for _, m := range goMigrations {
 		id, name, err := sqlmigration.ParseMigrationFileName(m.sourceName)
@@ -114,11 +114,11 @@ func registerGoMigrations(goMigrations []goMigration) (gomigrator.Migrations, er
 		uniqueIDMap[id] = struct{}{}
 
 		if m.noTx {
-			migrations = append(migrations, gomigrator.NewMigrationNoTx(id, name, m.executorNoTx))
+			migrations = append(migrations, migrator.NewMigrationNoTx(id, name, m.executorNoTx))
 			continue
 		}
 
-		migrations = append(migrations, gomigrator.NewMigration(id, name, m.executor))
+		migrations = append(migrations, migrator.NewMigration(id, name, m.executor))
 	}
 
 	return migrations, nil

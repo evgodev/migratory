@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/sqlmigration/parser"
 )
 
@@ -82,7 +82,7 @@ func newSQLPreparer(sourceFilePath string, fsys fs.FS) sqlPreparer {
 	}
 }
 
-func (s sqlPreparer) Prepare() (*gomigrator.ExecutorContainer, error) {
+func (s sqlPreparer) Prepare() (*migrator.ExecutorContainer, error) {
 	file, err := s.fsys.Open(s.sourcePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file at path %s: %w", s.sourcePath, err)
@@ -96,13 +96,13 @@ func (s sqlPreparer) Prepare() (*gomigrator.ExecutorContainer, error) {
 		return nil, fmt.Errorf("failed to parse migration %s: %w", s.sourcePath, err)
 	}
 
-	var container *gomigrator.ExecutorContainer
+	var container *migrator.ExecutorContainer
 	if parsed.DisableTransactionUp || parsed.DisableTransactionDown {
 		executor := newSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
-		container = gomigrator.NewExecutorDBContainer(executor)
+		container = migrator.NewExecutorDBContainer(executor)
 	} else {
 		executor := newSQLExecutor(parsed.UpStatements, parsed.DownStatements)
-		container = gomigrator.NewExecutorTxContainer(executor)
+		container = migrator.NewExecutorTxContainer(executor)
 	}
 
 	return container, nil

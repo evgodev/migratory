@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/sqlmigration"
 	"github.com/spf13/cobra"
 )
@@ -72,7 +72,7 @@ func up(dir, schema, table string, force bool) (int, error) {
 	}
 
 	ctx := context.Background()
-	migrator, err := gomigrator.New(ctx, db, "postgres", schema, table)
+	migrator, err := migrator.New(ctx, db, "postgres", schema, table)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create migrator: %w", err)
 	}

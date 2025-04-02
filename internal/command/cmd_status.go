@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/sqlmigration"
 	"github.com/spf13/cobra"
 )
@@ -53,7 +53,7 @@ func status(dir, schema, table string) error {
 	}
 
 	ctx := context.Background()
-	migrator, err := gomigrator.New(ctx, db, "postgres", schema, table)
+	migrator, err := migrator.New(ctx, db, "postgres", schema, table)
 	if err != nil {
 		return fmt.Errorf("failed to create migrator: %w", err)
 	}
@@ -68,7 +68,7 @@ func status(dir, schema, table string) error {
 	return nil
 }
 
-func printStatus(migrationStatuses []gomigrator.MigrationResult) {
+func printStatus(migrationStatuses []migrator.MigrationResult) {
 	w := tabwriter.NewWriter(os.Stdout, 3, 1, 2, ' ', 0)
 
 	_, err := fmt.Fprintf(w, "ID\tName\tApplied\tDate\t\n")

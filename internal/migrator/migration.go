@@ -1,4 +1,4 @@
-package gomigrator
+package migrator
 
 import (
 	"context"

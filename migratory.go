@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/korfairo/migratory/internal/gomigrator"
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/sqlmigration"
 )
 
@@ -88,7 +88,7 @@ func Up(db *sql.DB, opts ...OptionsFunc) (n int, err error) {
 
 func UpContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (n int, err error) {
 	option := applyOptions(opts)
-	migrator, err := gomigrator.New(ctx, db, option.dialect, option.schema, option.table)
+	migrator, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
 	if err != nil {
 		return 0, err
 	}
@@ -138,7 +138,7 @@ func GetStatus(db *sql.DB, opts ...OptionsFunc) ([]MigrationResult, error) {
 
 func GetStatusContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) ([]MigrationResult, error) {
 	option := applyOptions(opts)
-	migrator, err := gomigrator.New(ctx, db, option.dialect, option.schema, option.table)
+	migrator, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func GetDBVersion(db *sql.DB, opts ...OptionsFunc) (int64, error) {
 
 func GetDBVersionContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (int64, error) {
 	option := applyOptions(opts)
-	migrator, err := gomigrator.New(ctx, db, option.dialect, option.schema, option.table)
+	migrator, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
 	if err != nil {
 		return -1, err
 	}
@@ -188,7 +188,7 @@ func GetDBVersionContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (
 
 var ErrUnsupportedMigrationType = errors.New("migration type is unsupported")
 
-func getMigrations(migrationType, directory string) (m gomigrator.Migrations, err error) {
+func getMigrations(migrationType, directory string) (m migrator.Migrations, err error) {
 	switch migrationType {
 	case MigrationTypeGo:
 		m, err = registerGoMigrations(globalGoMigrations)
@@ -202,7 +202,7 @@ func getMigrations(migrationType, directory string) (m gomigrator.Migrations, er
 
 func rollback(ctx context.Context, db *sql.DB, redo bool, opts []OptionsFunc) error {
 	option := applyOptions(opts)
-	migrator, err := gomigrator.New(ctx, db, option.dialect, option.schema, option.table)
+	migrator, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
 	if err != nil {
 		return err
 	}
