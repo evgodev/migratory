@@ -4,8 +4,6 @@ import "fmt"
 
 type Postgres struct{}
 
-var _ QueryManager = (*Postgres)(nil)
-
 func (p *Postgres) MigrationsTableExists(schemaName, tableName string) string {
 	q := `SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = '%s' AND tablename  = '%s')`
 	return fmt.Sprintf(q, schemaName, tableName)

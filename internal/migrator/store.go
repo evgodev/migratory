@@ -10,6 +10,15 @@ import (
 	"github.com/korfairo/migratory/internal/migrator/dialect"
 )
 
+type QueryManager interface {
+	MigrationsTableExists(schemaName, tableName string) string
+	CreateMigrationsTable(schemaName, tableName string) string
+	InsertMigration(schemaName, tableName string) string
+	DeleteMigration(schemaName, tableName string) string
+	ListMigrations(schemaName, tableName string) string
+	SelectLastMigrationID(schemaName, tableName string) string
+}
+
 const DialectPostgres = "postgres"
 
 var ErrUnsupportedDialect = errors.New("unsupported dialect")
@@ -18,11 +27,11 @@ type store struct {
 	schemaName string
 	tableName  string
 
-	queryManager dialect.QueryManager
+	queryManager QueryManager
 }
 
 func newStore(dbDialect, schemaName, tableName string) (*store, error) {
-	var queryManager dialect.QueryManager
+	var queryManager QueryManager
 
 	switch dbDialect {
 	case DialectPostgres:
