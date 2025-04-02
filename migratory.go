@@ -12,7 +12,8 @@ import (
 
 var ErrUnsupportedMigrationType = errors.New("migration type is unsupported")
 
-// Up applies all available database migrations in order, using the given database connection and optional configurations.
+// Up applies all available database migrations in order,
+// using the given database connection and optional configurations.
 func Up(db *sql.DB, opts ...OptionsFunc) (n int, err error) {
 	ctx := context.Background()
 	return UpContext(ctx, db, opts...)
@@ -40,13 +41,15 @@ func UpContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (n int, err
 	return appliedCount, nil
 }
 
-// Down rolls back the most recently applied migration in the database. Accepts optional configuration via OptionsFunc.
+// Down rolls back the most recently applied migration in the database.
+// Accepts optional configuration via OptionsFunc.
 func Down(db *sql.DB, opts ...OptionsFunc) error {
 	ctx := context.Background()
 	return DownContext(ctx, db, opts...)
 }
 
-// DownContext rolls back database migrations using the provided context, database connection, and optional configuration.
+// DownContext rolls back database migrations using the provided context, database connection,
+// and optional configuration.
 func DownContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) error {
 	return rollback(ctx, db, false, opts)
 }
@@ -62,7 +65,8 @@ func RedoContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) error {
 	return rollback(ctx, db, true, opts)
 }
 
-// MigrationResult represents the result of a migration, including its ID, name, application status, and applied timestamp.
+// MigrationResult represents the result of a migration,
+// including its ID, name, application status, and applied timestamp.
 type MigrationResult struct {
 	ID        int64
 	Name      string
@@ -70,13 +74,15 @@ type MigrationResult struct {
 	AppliedAt time.Time
 }
 
-// GetStatus retrieves the migration status from the database, including applied status and application time for each migration.
+// GetStatus retrieves the migration status from the database,
+// including applied status and application time for each migration.
 func GetStatus(db *sql.DB, opts ...OptionsFunc) ([]MigrationResult, error) {
 	ctx := context.Background()
 	return GetStatusContext(ctx, db, opts...)
 }
 
-// GetStatusContext retrieves the migration status from the database and returns a list of MigrationResult with their details.
+// GetStatusContext retrieves the migration status from the database
+// and returns a list of MigrationResult with their details.
 func GetStatusContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) ([]MigrationResult, error) {
 	option := applyOptions(opts)
 	m, err := migrator.New(ctx, db, option.dialect, option.schema, option.table)
