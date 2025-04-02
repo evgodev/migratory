@@ -28,7 +28,7 @@ func rollback(dir, table string, redo bool) error {
 	}
 
 	ctx := context.Background()
-	m, err := migrator.New(ctx, db, "postgres", table)
+	m, err := migrator.New(ctx, db, migrator.DialectPostgres, table)
 	if err != nil {
 		return fmt.Errorf("failed to create migrator: %w", err)
 	}

@@ -19,7 +19,10 @@ type QueryManager interface {
 	SelectLastMigrationID(tableName string) string
 }
 
-const DialectPostgres = "postgres"
+const (
+	DialectPostgres   = "postgres"
+	DialectClickhouse = "clickhouse"
+)
 
 var ErrUnsupportedDialect = errors.New("unsupported dialect")
 
@@ -35,6 +38,8 @@ func newStore(dbDialect, tableName string) (*store, error) {
 	switch dbDialect {
 	case DialectPostgres:
 		queryManager = &dialect.Postgres{}
+	case DialectClickhouse:
+		queryManager = &dialect.Clickhouse{}
 	default:
 		return nil, ErrUnsupportedDialect
 	}

@@ -46,7 +46,7 @@ func getDBVersion(table string) (int64, error) {
 	}()
 
 	ctx := context.Background()
-	m, err := migrator.New(ctx, db, "postgres", table)
+	m, err := migrator.New(ctx, db, migrator.DialectPostgres, table)
 	if err != nil {
 		return 0, fmt.Errorf("could not create migrator: %w", err)
 	}

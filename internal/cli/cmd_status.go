@@ -53,12 +53,12 @@ func status(dir, table string) error {
 	}
 
 	ctx := context.Background()
-	migrator, err := migrator.New(ctx, db, "postgres", table)
+	m, err := migrator.New(ctx, db, migrator.DialectPostgres, table)
 	if err != nil {
 		return fmt.Errorf("failed to create migrator: %w", err)
 	}
 
-	migrationStatuses, err := migrator.GetStatus(ctx, migrations, db)
+	migrationStatuses, err := m.GetStatus(ctx, migrations, db)
 	if err != nil {
 		return fmt.Errorf("failed to GetStatus(...): %w", err)
 	}

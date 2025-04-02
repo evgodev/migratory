@@ -54,7 +54,7 @@ func init() {
 }
 
 func up(dir, table string, force bool) (int, error) {
-	db, err := sql.Open("postgres", config.DSN)
+	db, err := sql.Open(migrator.DialectPostgres, config.DSN)
 	if err != nil {
 		return 0, fmt.Errorf("could not open database: %w", err)
 	}
@@ -72,12 +72,12 @@ func up(dir, table string, force bool) (int, error) {
 	}
 
 	ctx := context.Background()
-	migrator, err := migrator.New(ctx, db, "postgres", table)
+	m, err := migrator.New(ctx, db, migrator.DialectPostgres, table)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create migrator: %w", err)
 	}
 
-	appliedCount, err := migrator.Up(ctx, migrations, db, force)
+	appliedCount, err := m.Up(ctx, migrations, db, force)
 	if err != nil {
 		return appliedCount, fmt.Errorf("failed to execute migration: %w", err)
 	}
