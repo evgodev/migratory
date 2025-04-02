@@ -5,7 +5,7 @@ DB_PASSWORD = password
 POSTGRES_PORT = 5432
 POSTGRES_DSN = postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:$(POSTGRES_PORT)/$(DB_NAME)?sslmode=disable
 
-COMPOSE_PATH = ./test/docker-compose.yml
+COMPOSE_PATH = ./docker-compose.yml
 COMPOSE_ENV = DB_NAME=$(DB_NAME) DB_USER=$(DB_USER) DB_PASSWORD=$(DB_PASSWORD) POSTGRES_PORT=$(POSTGRES_PORT)
 
 integration-test: postgres-up
