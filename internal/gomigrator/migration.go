@@ -15,21 +15,21 @@ type Migration struct {
 	isPrepared bool
 	preparer   Preparer
 
-	executors ExecutorContainer
+	executor ExecutorContainer
 }
 
 type ExecutorContainer struct {
-	noTx         bool
-	executor     Executor
-	executorNoTx ExecutorNoTx
+	useDB      bool
+	executorTx ExecutorTx
+	executorDB ExecutorDB
 }
 
-type Executor interface {
-	Up(ctx context.Context, tx *sql.Tx) error
-	Down(ctx context.Context, tx *sql.Tx) error
+type ExecutorTx interface {
+	UpTx(ctx context.Context, tx *sql.Tx) error
+	DownTx(ctx context.Context, tx *sql.Tx) error
 }
 
-type ExecutorNoTx interface {
+type ExecutorDB interface {
 	Up(ctx context.Context, db *sql.DB) error
 	Down(ctx context.Context, db *sql.DB) error
 }
@@ -38,52 +38,52 @@ type Preparer interface {
 	Prepare() (*ExecutorContainer, error)
 }
 
-func NewExecutorContainer(executor Executor) *ExecutorContainer {
+func NewExecutorTxContainer(executorTx ExecutorTx) *ExecutorContainer {
 	return &ExecutorContainer{
-		noTx:     false,
-		executor: executor,
+		useDB:      false,
+		executorTx: executorTx,
 	}
 }
 
-func NewExecutorContainerNoTx(executorNoTx ExecutorNoTx) *ExecutorContainer {
+func NewExecutorDBContainer(executorDB ExecutorDB) *ExecutorContainer {
 	return &ExecutorContainer{
-		noTx:         true,
-		executorNoTx: executorNoTx,
+		useDB:      true,
+		executorDB: executorDB,
 	}
 }
 
-func (e ExecutorContainer) NoTx() bool {
-	return e.noTx
+func (e ExecutorContainer) UseDB() bool {
+	return e.useDB
 }
 
-func (e ExecutorContainer) Executor() Executor {
-	return e.executor
+func (e ExecutorContainer) ExecutorTx() ExecutorTx {
+	return e.executorTx
 }
 
-func (e ExecutorContainer) ExecutorNoTx() ExecutorNoTx {
-	return e.executorNoTx
+func (e ExecutorContainer) ExecutorDB() ExecutorDB {
+	return e.executorDB
 }
 
-func NewMigration(id int64, name string, executor Executor) Migration {
+func NewMigration(id int64, name string, executor ExecutorTx) Migration {
 	return Migration{
 		id:         id,
 		name:       name,
 		isPrepared: true,
-		executors: ExecutorContainer{
-			noTx:     false,
-			executor: executor,
+		executor: ExecutorContainer{
+			useDB:      false,
+			executorTx: executor,
 		},
 	}
 }
 
-func NewMigrationNoTx(id int64, name string, executorNoTx ExecutorNoTx) Migration {
+func NewMigrationNoTx(id int64, name string, executorDB ExecutorDB) Migration {
 	return Migration{
 		id:         id,
 		name:       name,
 		isPrepared: true,
-		executors: ExecutorContainer{
-			noTx:         true,
-			executorNoTx: executorNoTx,
+		executor: ExecutorContainer{
+			useDB:      true,
+			executorDB: executorDB,
 		},
 	}
 }
@@ -104,52 +104,52 @@ var (
 	ErrNilExecutorContainer = errors.New("migration preparer returned nil ExecutorContainer")
 )
 
-func (m *Migration) Up(ctx context.Context, tx *sql.Tx) error {
+func (m *Migration) UpTx(ctx context.Context, tx *sql.Tx) error {
 	if !m.isPrepared {
 		return ErrMigrationNotPrepared
 	}
 
-	if m.executors.Executor() == nil {
+	if m.executor.ExecutorTx() == nil {
 		return ErrNilMigrationExecutor
 	}
 
-	return m.executors.Executor().Up(ctx, tx)
+	return m.executor.ExecutorTx().UpTx(ctx, tx)
 }
 
-func (m *Migration) Down(ctx context.Context, tx *sql.Tx) error {
+func (m *Migration) DownTx(ctx context.Context, tx *sql.Tx) error {
 	if !m.isPrepared {
 		return ErrMigrationNotPrepared
 	}
 
-	if m.executors.Executor() == nil {
+	if m.executor.ExecutorTx() == nil {
 		return ErrNilMigrationExecutor
 	}
 
-	return m.executors.Executor().Down(ctx, tx)
+	return m.executor.ExecutorTx().DownTx(ctx, tx)
 }
 
-func (m *Migration) UpNoTx(ctx context.Context, db *sql.DB) error {
+func (m *Migration) UpDB(ctx context.Context, db *sql.DB) error {
 	if !m.isPrepared {
 		return ErrMigrationNotPrepared
 	}
 
-	if m.executors.ExecutorNoTx() == nil {
+	if m.executor.ExecutorDB() == nil {
 		return ErrNilMigrationExecutor
 	}
 
-	return m.executors.ExecutorNoTx().Up(ctx, db)
+	return m.executor.ExecutorDB().Up(ctx, db)
 }
 
-func (m *Migration) DownNoTx(ctx context.Context, db *sql.DB) error {
+func (m *Migration) DownDB(ctx context.Context, db *sql.DB) error {
 	if !m.isPrepared {
 		return ErrMigrationNotPrepared
 	}
 
-	if m.executors.ExecutorNoTx() == nil {
+	if m.executor.ExecutorDB() == nil {
 		return ErrNilMigrationExecutor
 	}
 
-	return m.executors.ExecutorNoTx().Down(ctx, db)
+	return m.executor.ExecutorDB().Down(ctx, db)
 }
 
 func (m *Migration) ChooseExecutor() (noTx bool, err error) {
@@ -157,7 +157,7 @@ func (m *Migration) ChooseExecutor() (noTx bool, err error) {
 		return false, err
 	}
 
-	return m.executors.NoTx(), nil
+	return m.executor.UseDB(), nil
 }
 
 func (m *Migration) ID() int64 {
@@ -190,7 +190,7 @@ func (m *Migration) prepare() error {
 		return ErrNilExecutorContainer
 	}
 
-	m.executors = *executorController
+	m.executor = *executorController
 	m.isPrepared = true
 
 	return nil

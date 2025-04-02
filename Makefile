@@ -20,14 +20,11 @@ build:
 run: build
 	$(BIN)
 
-lint-install:
-	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.55.2
-
-lint: lint-install
+lint:
 	golangci-lint run ./... -v
 
 test:
-	go test -race ./internal/...
+	go test -race ./internal/... -cover
 
 integration-test: postgres-up
 	go test ./test/ -dsn $(POSTGRES_DSN) -tags integration
@@ -38,4 +35,4 @@ postgres-up:
 postgres-down:
 	$(COMPOSE_ENV) docker compose -f $(COMPOSE_PATH) down
 
-.PHONY: build run lint-install lint test integration-test postgres-up postgres-down
+.PHONY: build run lint test integration-test postgres-up postgres-down

@@ -1,3 +1,5 @@
+// Package parser provides functionality to parse SQL migrations, divide it to up and down SQL statements.
+// See testdata for examples.
 package parser
 
 import (
@@ -27,6 +29,7 @@ var (
 	ErrNoUpDownCommands    = errors.New("no Up and Down commands found during parsing")
 )
 
+// ParsedMigration describes up and down SQL statements.
 type ParsedMigration struct {
 	UpStatements   []string
 	DownStatements []string
@@ -35,75 +38,13 @@ type ParsedMigration struct {
 	DisableTransactionDown bool
 }
 
-func endsWithSemicolon(line string) bool {
-	scanner := bufio.NewScanner(strings.NewReader(line))
-	scanner.Split(bufio.ScanWords)
-
-	prev := ""
-	for scanner.Scan() {
-		word := scanner.Text()
-		if strings.HasPrefix(word, "--") {
-			break
-		}
-		prev = word
-	}
-
-	return strings.HasSuffix(prev, ";")
-}
-
-type migrationDirection int
-
-const (
-	directionNone migrationDirection = iota
-	directionUp
-	directionDown
-)
-
-type migrateCommand struct {
-	command string
-	options []string
-}
-
-func parseCommand(line string) (*migrateCommand, error) {
-	fields := strings.Fields(strings.TrimPrefix(line, commandPrefix))
-	if len(fields) == 0 {
-		return nil, ErrIncompleteCommand
-	}
-
-	return &migrateCommand{
-		command: fields[0],
-		options: fields[1:],
-	}, nil
-}
-
-func (c *migrateCommand) hasOption(option string) bool {
-	for _, o := range c.options {
-		if o == option {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isCommand(line string) bool {
-	return strings.HasPrefix(line, commandPrefix)
-}
-
-func isSQLComment(line string) bool {
-	return strings.HasPrefix(line, "--")
-}
-
-func isEmpty(line string) bool {
-	return strings.TrimSpace(line) == ""
-}
-
-func ParseMigration(r io.Reader) (*ParsedMigration, error) { //nolint:all
+// ParseMigration parses SQL migration scripts into up and down statements, handling specific commands and identifiers.
+// It returns a ParsedMigration with the parsed statements and transactions configuration or an error on failure.
+func ParseMigration(r io.Reader) (*ParsedMigration, error) {
 	pm := &ParsedMigration{}
 
 	var buf bytes.Buffer
 	scanner := bufio.NewScanner(r)
-	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
 	var statementStarted bool
 	var statementEnded bool
@@ -116,7 +57,7 @@ func ParseMigration(r io.Reader) (*ParsedMigration, error) { //nolint:all
 			continue
 		}
 
-		if isCommand(line) { //nolint:all
+		if isCommand(line) {
 			cmd, err := parseCommand(line)
 			if err != nil {
 				return nil, err
@@ -199,4 +140,67 @@ func ParseMigration(r io.Reader) (*ParsedMigration, error) { //nolint:all
 	}
 
 	return pm, nil
+}
+
+func endsWithSemicolon(line string) bool {
+	scanner := bufio.NewScanner(strings.NewReader(line))
+	scanner.Split(bufio.ScanWords)
+
+	prev := ""
+	for scanner.Scan() {
+		word := scanner.Text()
+		if strings.HasPrefix(word, "--") {
+			break
+		}
+		prev = word
+	}
+
+	return strings.HasSuffix(prev, ";")
+}
+
+type migrationDirection int
+
+const (
+	directionNone migrationDirection = iota
+	directionUp
+	directionDown
+)
+
+type migrateCommand struct {
+	command string
+	options []string
+}
+
+func parseCommand(line string) (*migrateCommand, error) {
+	fields := strings.Fields(strings.TrimPrefix(line, commandPrefix))
+	if len(fields) == 0 {
+		return nil, ErrIncompleteCommand
+	}
+
+	return &migrateCommand{
+		command: fields[0],
+		options: fields[1:],
+	}, nil
+}
+
+func (c *migrateCommand) hasOption(option string) bool {
+	for _, o := range c.options {
+		if o == option {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isCommand(line string) bool {
+	return strings.HasPrefix(line, commandPrefix)
+}
+
+func isSQLComment(line string) bool {
+	return strings.HasPrefix(line, "--")
+}
+
+func isEmpty(line string) bool {
+	return strings.TrimSpace(line) == ""
 }

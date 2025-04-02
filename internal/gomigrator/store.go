@@ -10,41 +10,18 @@ import (
 	"github.com/korfairo/migratory/internal/gomigrator/dialect"
 )
 
-type Store interface {
-	MigrationsTableExists(ctx context.Context, db DB) (bool, error)
-	CreateMigrationsTable(ctx context.Context, db DB) error
-	InsertMigration(ctx context.Context, db DB, migrationName string, id int64) error
-	DeleteMigration(ctx context.Context, db DB, id int64) error
-	SelectLastID(ctx context.Context, db DB) (int64, error)
-	ListMigrations(ctx context.Context, db DB) ([]MigrationResult, error)
-}
-
-type DB interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}
-
-type MigrationResult struct {
-	ID        int64
-	Name      string
-	AppliedAt time.Time
-}
-
-const (
-	DialectPostgres = "postgres"
-)
+const DialectPostgres = "postgres"
 
 var ErrUnsupportedDialect = errors.New("unsupported dialect")
 
-type migrationStore struct {
+type store struct {
 	schemaName string
 	tableName  string
 
 	queryManager dialect.QueryManager
 }
 
-func newStore(dbDialect, schemaName, tableName string) (Store, error) {
+func newStore(dbDialect, schemaName, tableName string) (*store, error) {
 	var queryManager dialect.QueryManager
 
 	switch dbDialect {
@@ -54,14 +31,20 @@ func newStore(dbDialect, schemaName, tableName string) (Store, error) {
 		return nil, ErrUnsupportedDialect
 	}
 
-	return migrationStore{
+	return &store{
 		queryManager: queryManager,
 		schemaName:   schemaName,
 		tableName:    tableName,
 	}, nil
 }
 
-func (s migrationStore) MigrationsTableExists(ctx context.Context, db DB) (bool, error) {
+type database interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+func (s store) migrationsTableExists(ctx context.Context, db database) (bool, error) {
 	q := s.queryManager.MigrationsTableExists(s.schemaName, s.tableName)
 	row := db.QueryRowContext(ctx, q)
 
@@ -73,19 +56,19 @@ func (s migrationStore) MigrationsTableExists(ctx context.Context, db DB) (bool,
 	return exists, nil
 }
 
-func (s migrationStore) CreateMigrationsTable(ctx context.Context, db DB) error {
+func (s store) createMigrationsTable(ctx context.Context, db database) error {
 	q := s.queryManager.CreateMigrationsTable(s.schemaName, s.tableName)
 	_, err := db.ExecContext(ctx, q)
 	return err
 }
 
-func (s migrationStore) InsertMigration(ctx context.Context, db DB, migrationName string, id int64) error {
+func (s store) insertMigration(ctx context.Context, db database, migrationName string, id int64) error {
 	q := s.queryManager.InsertMigration(s.schemaName, s.tableName)
 	_, err := db.ExecContext(ctx, q, id, migrationName)
 	return err
 }
 
-func (s migrationStore) DeleteMigration(ctx context.Context, db DB, id int64) error {
+func (s store) deleteMigration(ctx context.Context, db database, id int64) error {
 	q := s.queryManager.DeleteMigration(s.schemaName, s.tableName)
 	_, err := db.ExecContext(ctx, q, id)
 	return err
@@ -93,7 +76,7 @@ func (s migrationStore) DeleteMigration(ctx context.Context, db DB, id int64) er
 
 var ErrNoRows = errors.New("no rows in migrations table")
 
-func (s migrationStore) SelectLastID(ctx context.Context, db DB) (int64, error) {
+func (s store) selectLastID(ctx context.Context, db database) (int64, error) {
 	q := s.queryManager.SelectLastMigrationID(s.schemaName, s.tableName)
 	row := db.QueryRowContext(ctx, q)
 
@@ -111,11 +94,17 @@ func (s migrationStore) SelectLastID(ctx context.Context, db DB) (int64, error) 
 	return id, nil
 }
 
-func (s migrationStore) ListMigrations(ctx context.Context, db DB) ([]MigrationResult, error) {
+type MigrationResult struct {
+	ID        int64
+	Name      string
+	AppliedAt time.Time
+}
+
+func (s store) listMigrations(ctx context.Context, db database) ([]MigrationResult, error) {
 	q := s.queryManager.ListMigrations(s.schemaName, s.tableName)
 	rows, err := db.QueryContext(ctx, q)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query ListMigrations: %w", err)
+		return nil, fmt.Errorf("failed to execute query listMigrations: %w", err)
 	}
 	defer func() {
 		_ = rows.Close()

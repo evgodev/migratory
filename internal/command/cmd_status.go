@@ -22,7 +22,7 @@ Command creates migrations table if not exists.`,
 	Example: `migratory status -c /etc/config.yml
 migratory status -d postgresql://role:password@127.0.0.1:5432/database --dir example/migrations/
 migratory status -d postgresql://role:password@127.0.0.1:5432/database --dir migrations/ -t my_migrations_table`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		if err := status(config.Dir, config.Schema, config.Table); err != nil {
 			fmt.Printf("unable to get migrations status: %s\n", err)
 			os.Exit(1)

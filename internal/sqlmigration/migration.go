@@ -27,11 +27,11 @@ func newSQLExecutor(up, down []string) sqlExecutor {
 	}
 }
 
-func (s sqlExecutor) Up(ctx context.Context, tx *sql.Tx) error {
+func (s sqlExecutor) UpTx(ctx context.Context, tx *sql.Tx) error {
 	return execute(ctx, tx, s.statements.up)
 }
 
-func (s sqlExecutor) Down(ctx context.Context, tx *sql.Tx) error {
+func (s sqlExecutor) DownTx(ctx context.Context, tx *sql.Tx) error {
 	return execute(ctx, tx, s.statements.down)
 }
 
@@ -99,10 +99,10 @@ func (s sqlPreparer) Prepare() (*gomigrator.ExecutorContainer, error) {
 	var container *gomigrator.ExecutorContainer
 	if parsed.DisableTransactionUp || parsed.DisableTransactionDown {
 		executor := newSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
-		container = gomigrator.NewExecutorContainerNoTx(executor)
+		container = gomigrator.NewExecutorDBContainer(executor)
 	} else {
 		executor := newSQLExecutor(parsed.UpStatements, parsed.DownStatements)
-		container = gomigrator.NewExecutorContainer(executor)
+		container = gomigrator.NewExecutorTxContainer(executor)
 	}
 
 	return container, nil

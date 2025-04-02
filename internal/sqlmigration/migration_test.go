@@ -55,7 +55,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 					"SELECT COUNT(2);"
 				files.Create(t, "02_tmp_migration.sql", data)
 			},
-			want: gomigrator.NewExecutorContainer(
+			want: gomigrator.NewExecutorTxContainer(
 				newSQLExecutor(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
@@ -75,7 +75,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 					"SELECT COUNT(2);"
 				files.Create(t, "03_tmp_migration.sql", data)
 			},
-			want: gomigrator.NewExecutorContainerNoTx(
+			want: gomigrator.NewExecutorDBContainer(
 				newSQLExecutorNoTx(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},

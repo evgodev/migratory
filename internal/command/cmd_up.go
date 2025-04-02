@@ -25,7 +25,7 @@ Additionally, the command will create the migrations table if it does not alread
 	Example: `migratory up -c /etc/config.yml
 migratory up -d postgresql://role:password@127.0.0.1:5432/database --dir example/migrations/
 migratory up -d postgresql://role:password@127.0.0.1:5432/database --dir migrations/ -t my_migrations_table`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		force, err := cmd.Flags().GetBool("force")
 		if err != nil {
 			fmt.Println("failed to get bool --force flag")

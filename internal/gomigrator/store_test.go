@@ -15,7 +15,7 @@ func TestNewStore(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args    args
-		want    Store
+		want    *store
 		wantErr error
 	}{
 		"existing dialect": {
@@ -23,7 +23,7 @@ func TestNewStore(t *testing.T) {
 				dbDialect:  DialectPostgres,
 				schemaName: "public",
 				tableName:  "migrations",
-			}, want: migrationStore{
+			}, want: &store{
 				"public",
 				"migrations",
 				&dialect.Postgres{},
