@@ -1,6 +1,6 @@
 # Migratory
 
-A database migration library and CLI tool that supports both Go-based and SQL-based migrations.
+A lightweight and flexible database migration library and CLI tool with minimal dependencies.
 
 ## Features
 

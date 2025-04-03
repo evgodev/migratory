@@ -20,6 +20,8 @@ func main() {
 	}
 	defer db.Close()
 
+	migratory.SetDialect(migratory.Postgres)
+
 	// Apply all migrations
 	count, err := migratory.Up(db)
 	if err != nil {
