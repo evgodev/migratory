@@ -77,8 +77,7 @@ table migrations
 			filePath := filepath.Join(tmpDir, name+".yml")
 
 			if test.content != "" {
-				err := os.WriteFile(filePath, []byte(test.content), 0644)
-				if err != nil {
+				if err := os.WriteFile(filePath, []byte(test.content), 0o600); err != nil {
 					t.Fatalf("Failed to write test file: %v", err)
 				}
 			} else {

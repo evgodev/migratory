@@ -49,10 +49,11 @@ func ReadConfig(path string) (*Config, error) {
 }
 
 func dialectFromDSN(dsn string) string {
-	if len(dsn) == 0 {
+	index := strings.Index(dsn, ":")
+	if index == -1 || len(dsn) == 0 {
 		return ""
 	}
-	firstWord := dsn[:strings.Index(dsn, ":")]
+	firstWord := dsn[:index]
 	switch firstWord {
 	case migrator.DialectPostgres, migrator.DialectClickHouse:
 		return firstWord

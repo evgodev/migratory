@@ -76,10 +76,11 @@ func Nil(t *testing.T, got any, msg string) {
 	if !isNil(got) {
 		t.Fatalf("%s: got %v, want nil", msg, got)
 	}
-	return
 }
 
 // isNil checks if a specified object is nil or not, without Failing.
+//
+//nolint:exhaustive
 func isNil(object interface{}) bool {
 	if object == nil {
 		return true
@@ -93,7 +94,7 @@ func isNil(object interface{}) bool {
 		reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
 
 		return value.IsNil()
+	default:
+		return false
 	}
-
-	return false
 }
