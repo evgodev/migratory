@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/require"
 )
 
@@ -21,23 +22,43 @@ func TestReadConfig(t *testing.T) {
 		want    *Config
 		err     error
 	}{
-		"valid config": {
+		"valid postgres config": {
 			content: `
 directory: /path/to/directory
 dsn: postgres://user:password@localhost:5432/my_db
 table: migrations
 `,
 			want: &Config{
-				Dir:   "/path/to/directory",
-				DSN:   "postgres://user:password@localhost:5432/my_db",
-				Table: "migrations",
+				Dir:     "/path/to/directory",
+				DSN:     "postgres://user:password@localhost:5432/my_db",
+				Table:   "migrations",
+				Dialect: migrator.DialectPostgres,
+			},
+			err: nil,
+		},
+		"valid clickhouse config": {
+			content: `
+directory: /clickhouse/directory
+dsn: clickhouse://user:password@localhost:8123/default
+table: migrations
+`,
+			want: &Config{
+				Dir:     "/clickhouse/directory",
+				DSN:     "clickhouse://user:password@localhost:8123/default",
+				Table:   "migrations",
+				Dialect: migrator.DialectClickHouse,
 			},
 			err: nil,
 		},
 		"empty config": {
 			content: "",
-			want:    &defaultConfig,
-			err:     nil,
+			want: &Config{
+				Dir:     defaultConfig.Dir,
+				DSN:     defaultConfig.DSN,
+				Table:   defaultConfig.Table,
+				Dialect: defaultConfig.Dialect,
+			},
+			err: nil,
 		},
 		"invalid config": {
 			content: `

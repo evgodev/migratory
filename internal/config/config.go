@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/korfairo/migratory/internal/migrator"
 	"gopkg.in/yaml.v3"
 )
 
@@ -12,12 +14,15 @@ type Config struct {
 	Dir   string `yaml:"directory"`
 	DSN   string `yaml:"dsn"`
 	Table string `yaml:"table"`
+
+	Dialect string
 }
 
 var defaultConfig = Config{
-	Dir:   ".",
-	DSN:   "",
-	Table: "migrations",
+	Dir:     ".",
+	DSN:     "",
+	Table:   "migrations",
+	Dialect: "",
 }
 
 var (
@@ -36,11 +41,24 @@ func ReadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("%w: %w", ErrUnmarshalFailure, err)
 	}
 
+	cfg.Dialect = dialectFromDSN(cfg.DSN)
+
 	setDefaultValues(cfg)
 
-	expandConfig(cfg)
-
 	return cfg, nil
+}
+
+func dialectFromDSN(dsn string) string {
+	if len(dsn) == 0 {
+		return ""
+	}
+	firstWord := dsn[:strings.Index(dsn, ":")]
+	switch firstWord {
+	case migrator.DialectPostgres, migrator.DialectClickHouse:
+		return firstWord
+	default:
+		return ""
+	}
 }
 
 func setDefaultValues(cfg *Config) {
@@ -51,10 +69,4 @@ func setDefaultValues(cfg *Config) {
 	if cfg.Table == "" {
 		cfg.Table = defaultConfig.Table
 	}
-}
-
-func expandConfig(cfg *Config) {
-	cfg.Dir = os.ExpandEnv(cfg.Dir)
-	cfg.DSN = os.ExpandEnv(cfg.DSN)
-	cfg.Table = os.ExpandEnv(cfg.Table)
 }

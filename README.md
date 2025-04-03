@@ -1,12 +1,13 @@
 # Migratory
 
-A minimalistic database migration library and CLI tool for PostgreSQL that supports both Go-based and SQL-based migrations.
+A database migration library and CLI tool that supports both Go-based and SQL-based migrations.
 
 ## Features
 
-- **Go migrations**: Code-based migrations that use functions and can work with either `db` (no transaction) or transactional `tx` connections
-- **SQL migrations**: Plain text `.sql` files containing raw SQL statements
-- Works as both a library (Go package) and CLI tool
+- Supports **PostgreSQL** and **ClickHouse**
+- Usable as a library (Go package) or CLI tool
+- **SQL migrations**: `.sql` files with raw SQL statements, supported in both library and CLI.
+- **Go migrations**: Code-based migrations with support for transactional (`tx`) or non-transactional (`db`) connections in the library.
 
 ## Library Usage
 
@@ -165,7 +166,6 @@ All commands can use a YAML configuration file. Create a configuration file and 
 
 Example configuration:
 
-// TODO dialect
 ```yaml
 directory: /path/to/directory
 dsn: postgres://user:password@localhost:5432/my_db

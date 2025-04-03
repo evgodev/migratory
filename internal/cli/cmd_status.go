@@ -23,7 +23,7 @@ Command creates migrations table if not exists.`,
 migratory status -d postgresql://role:password@127.0.0.1:5432/database --dir example/migrations/
 migratory status -d postgresql://role:password@127.0.0.1:5432/database --dir migrations/ -t my_migrations_table`,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := status(config.Dir, config.Table); err != nil {
+		if err := status(config.Dir, config.Table, config.Dialect); err != nil {
 			fmt.Printf("unable to get migrations status: %s\n", err)
 			os.Exit(1)
 		}
@@ -34,7 +34,7 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 }
 
-func status(dir, table string) error {
+func status(dir, table, dialect string) error {
 	db, err := sql.Open("postgres", config.DSN)
 	if err != nil {
 		return fmt.Errorf("could not open database: %w", err)
@@ -53,7 +53,7 @@ func status(dir, table string) error {
 	}
 
 	ctx := context.Background()
-	m, err := migrator.New(ctx, db, migrator.DialectPostgres, table)
+	m, err := migrator.New(ctx, db, dialect, table)
 	if err != nil {
 		return fmt.Errorf("failed to create migrator: %w", err)
 	}

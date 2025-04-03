@@ -32,7 +32,7 @@ migratory up -d postgresql://role:password@127.0.0.1:5432/database --dir migrati
 			os.Exit(1)
 		}
 
-		appliedCount, err := up(config.Dir, config.Table, force)
+		appliedCount, err := up(config.Dir, config.Table, config.Dialect, force)
 		if err != nil {
 			fmt.Printf("%d migration(s) applied, an error occurred: %s\n", appliedCount, err)
 			return
@@ -53,8 +53,8 @@ func init() {
 	upCmd.Flags().BoolP("force", "f", false, `ignore "dirty migrations" error`)
 }
 
-func up(dir, table string, force bool) (int, error) {
-	db, err := sql.Open(migrator.DialectPostgres, config.DSN)
+func up(dir, table, dialect string, force bool) (int, error) {
+	db, err := sql.Open(dialect, config.DSN)
 	if err != nil {
 		return 0, fmt.Errorf("could not open database: %w", err)
 	}
@@ -72,7 +72,7 @@ func up(dir, table string, force bool) (int, error) {
 	}
 
 	ctx := context.Background()
-	m, err := migrator.New(ctx, db, migrator.DialectPostgres, table)
+	m, err := migrator.New(ctx, db, dialect, table)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create migrator: %w", err)
 	}
