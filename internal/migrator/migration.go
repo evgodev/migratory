@@ -8,13 +8,17 @@ import (
 
 var (
 	ErrMigrationNotPrepared = errors.New("migration is not prepared")
-	ErrNilMigrationExecutor = errors.New("migration executors is nil")
+	ErrNilMigrationExecutor = errors.New("migration Executors is nil")
 	ErrNilMigrationPreparer = errors.New("migration preparer is nil")
 	ErrNilExecutorContainer = errors.New("migration preparer returned nil Executors")
 )
 
 type Migrations []Migration
 
+// Migration represents a database migration with a unique ID, name, and Executors for transactional
+// or non-transactional use. This type manages whether a migration is prepared for execution and
+// supports lazy loading by delaying Executors initialization through a Preparer.
+// The Preparer is used only during the migration application process.
 type Migration struct {
 	id   int64
 	name string

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 )
 
+// Executors encapsulates execution logic for database migrations, supporting both transactional and non-transactional modes.
+// It holds either an ExecutorTx or an ExecutorDB to execute migrations based on the execution context.
 type Executors struct {
 	useDB      bool
 	executorTx ExecutorTx
