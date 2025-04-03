@@ -1,9 +1,8 @@
 package main
 
 import (
-	"github.com/korfairo/migratory/internal/cli"
-
 	_ "github.com/ClickHouse/clickhouse-go"
+	"github.com/korfairo/migratory/internal/cli"
 	_ "github.com/lib/pq"
 )
 
