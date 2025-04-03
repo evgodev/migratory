@@ -4,10 +4,11 @@ A lightweight and flexible database migration library and CLI tool with minimal 
 
 ## Features
 
-- Supports **PostgreSQL** and **ClickHouse**
+- Supports **PostgreSQL** and **ClickHouse**. You can add another DB, supported by `sql/db` (see `store` package).
 - Usable as a library (Go package) or CLI tool
-- **SQL migrations**: `.sql` files with raw SQL statements, supported in both library and CLI.
-- **Go migrations**: Code-based migrations with support for transactional (`tx`) or non-transactional (`db`) connections in the library.
+- **Go migrations**: code-based migrations with support for transactional (`tx`) or non-transactional (`db`) connections in the library
+- **SQL migrations**: `.sql` files with raw SQL statements, supported in both library and CLI
+- Lazy SQL parsing: migrations are parsed only when applied, ensuring efficient usage
 
 ## Library Usage
 
@@ -173,6 +174,9 @@ table: migrations
 ```
 
 ## Changelog
+### [1.1.1] - 2025-04-03
+- Refactored migrator package to improve readability.
+
 ### [1.1.0] - 2025-04-03
 - Added support for the ClickHouse dialect.
 

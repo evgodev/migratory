@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/sqlmigration"
 	"github.com/spf13/cobra"
 )
 
@@ -66,7 +65,7 @@ func up(dir, table, dialect string, force bool) (int, error) {
 		}
 	}()
 
-	migrations, err := sqlmigration.SeekMigrations(dir, nil)
+	migrations, err := migrator.SeekMigrations(dir)
 	if err != nil {
 		return 0, fmt.Errorf("could not find migrations in directory %s: %w", dir, err)
 	}

@@ -55,8 +55,10 @@ func dialectFromDSN(dsn string) string {
 	}
 	firstWord := dsn[:index]
 	switch firstWord {
-	case migrator.DialectPostgres, migrator.DialectClickHouse:
-		return firstWord
+	case "postgres":
+		return migrator.Postgres
+	case "clickhouse":
+		return migrator.ClickHouse
 	default:
 		return ""
 	}

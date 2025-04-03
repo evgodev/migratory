@@ -1,9 +1,8 @@
-package migrator
+package store
 
 import (
 	"testing"
 
-	"github.com/korfairo/migratory/internal/migrator/dialect"
 	"github.com/korfairo/migratory/internal/require"
 )
 
@@ -14,16 +13,26 @@ func TestNewStore(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args    args
-		want    *store
+		want    *Store
 		wantErr error
 	}{
-		"existing dialect": {
+		"existing dialect Posgres": {
 			args: args{
-				dbDialect: DialectPostgres,
+				dbDialect: Postgres,
 				tableName: "migrations",
-			}, want: &store{
+			}, want: &Store{
 				"migrations",
-				&dialect.Postgres{},
+				&postgresQueryBuilder{},
+			},
+			wantErr: nil,
+		},
+		"existing dialect Clickhouse": {
+			args: args{
+				dbDialect: ClickHouse,
+				tableName: "migrations",
+			}, want: &Store{
+				"migrations",
+				&clickhouseQueryBuilder{},
 			},
 			wantErr: nil,
 		},
@@ -37,9 +46,9 @@ func TestNewStore(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := newStore(test.args.dbDialect, test.args.tableName)
-			require.ErrorIs(t, err, test.wantErr, "newStore(...) error")
-			require.Equal(t, got, test.want, "newStore(...) new store")
+			got, err := New(test.args.dbDialect, test.args.tableName)
+			require.ErrorIs(t, err, test.wantErr, "New(...) error")
+			require.Equal(t, got, test.want, "New(...) new Store")
 		})
 	}
 }

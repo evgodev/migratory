@@ -4,116 +4,75 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"github.com/korfairo/migratory/internal/migrator/executor"
+)
+
+var (
+	ErrMigrationNotPrepared = errors.New("migration is not prepared")
+	ErrNilMigrationExecutor = errors.New("migration executors is nil")
+	ErrNilMigrationPreparer = errors.New("migration preparer is nil")
+	ErrNilExecutorContainer = errors.New("migration preparer returned nil executors")
 )
 
 type Migrations []Migration
 
+// Migration represents a database migration with a unique ID, name, and executors for transactional
+// or non-transactional use. This type manages whether a migration is prepared for execution and
+// supports lazy loading (SQL migrations are parsed only during the migration application process).
 type Migration struct {
 	id   int64
 	name string
 
 	isPrepared bool
-	preparer   Preparer
+	preparer   *sqlPreparer
 
-	executor ExecutorContainer
+	executors executors
 }
 
-type ExecutorContainer struct {
-	useDB      bool
-	executorTx ExecutorTx
-	executorDB ExecutorDB
-}
-
-type ExecutorTx interface {
-	UpTx(ctx context.Context, tx *sql.Tx) error
-	DownTx(ctx context.Context, tx *sql.Tx) error
-}
-
-type ExecutorDB interface {
-	Up(ctx context.Context, db *sql.DB) error
-	Down(ctx context.Context, db *sql.DB) error
-}
-
-type Preparer interface {
-	Prepare() (*ExecutorContainer, error)
-}
-
-func NewExecutorTxContainer(executorTx ExecutorTx) *ExecutorContainer {
-	return &ExecutorContainer{
-		useDB:      false,
-		executorTx: executorTx,
-	}
-}
-
-func NewExecutorDBContainer(executorDB ExecutorDB) *ExecutorContainer {
-	return &ExecutorContainer{
-		useDB:      true,
-		executorDB: executorDB,
-	}
-}
-
-func (e ExecutorContainer) UseDB() bool {
-	return e.useDB
-}
-
-func (e ExecutorContainer) ExecutorTx() ExecutorTx {
-	return e.executorTx
-}
-
-func (e ExecutorContainer) ExecutorDB() ExecutorDB {
-	return e.executorDB
-}
-
-func NewMigration(id int64, name string, executor ExecutorTx) Migration {
+func NewGoMigration(id int64, name string, up, down executor.GoMigrateFn) Migration {
 	return Migration{
 		id:         id,
 		name:       name,
 		isPrepared: true,
-		executor: ExecutorContainer{
+		executors: executors{
 			useDB:      false,
-			executorTx: executor,
+			executorTx: executor.NewGoExecutor(up, down),
 		},
 	}
 }
 
-func NewMigrationNoTx(id int64, name string, executorDB ExecutorDB) Migration {
+func NewGoMigrationNoTx(id int64, name string, up, down executor.GoMigrateNoTxFn) Migration {
 	return Migration{
 		id:         id,
 		name:       name,
 		isPrepared: true,
-		executor: ExecutorContainer{
+		executors: executors{
 			useDB:      true,
-			executorDB: executorDB,
+			executorDB: executor.NewGoExecutorNoTx(up, down),
 		},
 	}
 }
 
-func NewMigrationWithPreparer(id int64, name string, preparer Preparer) Migration {
+func NewSQLMigration(id int64, name, filePath string) Migration {
 	return Migration{
 		id:         id,
 		name:       name,
 		isPrepared: false,
-		preparer:   preparer,
+		preparer:   newSQLPreparer(filePath),
 	}
 }
-
-var (
-	ErrMigrationNotPrepared = errors.New("migration is not prepared")
-	ErrNilMigrationExecutor = errors.New("migration executor is nil")
-	ErrNilMigrationPreparer = errors.New("migration preparer is nil")
-	ErrNilExecutorContainer = errors.New("migration preparer returned nil ExecutorContainer")
-)
 
 func (m *Migration) UpTx(ctx context.Context, tx *sql.Tx) error {
 	if !m.isPrepared {
 		return ErrMigrationNotPrepared
 	}
 
-	if m.executor.ExecutorTx() == nil {
+	if m.executors.ExecutorTx() == nil {
 		return ErrNilMigrationExecutor
 	}
 
-	return m.executor.ExecutorTx().UpTx(ctx, tx)
+	return m.executors.ExecutorTx().UpTx(ctx, tx)
 }
 
 func (m *Migration) DownTx(ctx context.Context, tx *sql.Tx) error {
@@ -121,11 +80,11 @@ func (m *Migration) DownTx(ctx context.Context, tx *sql.Tx) error {
 		return ErrMigrationNotPrepared
 	}
 
-	if m.executor.ExecutorTx() == nil {
+	if m.executors.ExecutorTx() == nil {
 		return ErrNilMigrationExecutor
 	}
 
-	return m.executor.ExecutorTx().DownTx(ctx, tx)
+	return m.executors.ExecutorTx().DownTx(ctx, tx)
 }
 
 func (m *Migration) UpDB(ctx context.Context, db *sql.DB) error {
@@ -133,11 +92,11 @@ func (m *Migration) UpDB(ctx context.Context, db *sql.DB) error {
 		return ErrMigrationNotPrepared
 	}
 
-	if m.executor.ExecutorDB() == nil {
+	if m.executors.ExecutorDB() == nil {
 		return ErrNilMigrationExecutor
 	}
 
-	return m.executor.ExecutorDB().Up(ctx, db)
+	return m.executors.ExecutorDB().Up(ctx, db)
 }
 
 func (m *Migration) DownDB(ctx context.Context, db *sql.DB) error {
@@ -145,11 +104,11 @@ func (m *Migration) DownDB(ctx context.Context, db *sql.DB) error {
 		return ErrMigrationNotPrepared
 	}
 
-	if m.executor.ExecutorDB() == nil {
+	if m.executors.ExecutorDB() == nil {
 		return ErrNilMigrationExecutor
 	}
 
-	return m.executor.ExecutorDB().Down(ctx, db)
+	return m.executors.ExecutorDB().Down(ctx, db)
 }
 
 func (m *Migration) ChooseExecutor() (noTx bool, err error) {
@@ -157,7 +116,7 @@ func (m *Migration) ChooseExecutor() (noTx bool, err error) {
 		return false, err
 	}
 
-	return m.executor.UseDB(), nil
+	return m.executors.useDB, nil
 }
 
 func (m *Migration) ID() int64 {
@@ -190,7 +149,7 @@ func (m *Migration) prepare() error {
 		return ErrNilExecutorContainer
 	}
 
-	m.executor = *executorController
+	m.executors = *executorController
 	m.isPrepared = true
 
 	return nil

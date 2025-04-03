@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/sqlmigration"
 )
 
 func rollback(dir, table, dialect string, redo bool) error {
@@ -22,7 +21,7 @@ func rollback(dir, table, dialect string, redo bool) error {
 		}
 	}()
 
-	migrations, err := sqlmigration.SeekMigrations(dir, nil)
+	migrations, err := migrator.SeekMigrations(dir)
 	if err != nil {
 		return fmt.Errorf("could not find migrations in directory %s: %w", dir, err)
 	}

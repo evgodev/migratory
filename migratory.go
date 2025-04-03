@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/sqlmigration"
 )
 
-var ErrUnsupportedMigrationType = errors.New("migration type is unsupported")
+var (
+	ErrUnsupportedMigrationType = errors.New("migration type is unsupported")
+	ErrIncorrectMigrationName   = errors.New("migration name is incorrect")
+)
 
 // Up applies all available database migrations in order,
 // using the given database connection and optional configurations.
@@ -142,9 +144,9 @@ func GetDBVersionContext(ctx context.Context, db *sql.DB, opts ...OptionsFunc) (
 func getMigrations(migrationType, directory string) (m migrator.Migrations, err error) {
 	switch migrationType {
 	case migrationTypeGo:
-		m, err = registerGoMigrations(globalGoMigrations)
+		m, err = convertGoMigrations()
 	case migrationTypeSQL:
-		m, err = sqlmigration.SeekMigrations(directory, nil)
+		m, err = migrator.SeekMigrations(directory)
 	default:
 		return nil, ErrUnsupportedMigrationType
 	}

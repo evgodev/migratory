@@ -3,12 +3,20 @@ package migratory
 import "github.com/korfairo/migratory/internal/migrator"
 
 const (
-	Postgres   Dialect = migrator.DialectPostgres
-	ClickHouse Dialect = migrator.DialectClickHouse
+	Postgres   Dialect = migrator.Postgres
+	ClickHouse Dialect = migrator.ClickHouse
 
 	migrationTypeGo  = "go"
 	migrationTypeSQL = "sql"
 )
+
+var defaultOpts = options{
+	migrationType: migrationTypeGo,
+	dialect:       Postgres,
+	directory:     ".",
+	table:         "migrations",
+	forceUp:       false,
+}
 
 // Dialect determines how the migrations table is managed based on the database system.
 type Dialect = string
@@ -20,14 +28,6 @@ type options struct {
 	table         string
 
 	forceUp bool
-}
-
-var defaultOpts = options{
-	migrationType: migrationTypeGo,
-	dialect:       Postgres,
-	directory:     ".",
-	table:         "migrations",
-	forceUp:       false,
 }
 
 type OptionsFunc func(o *options)

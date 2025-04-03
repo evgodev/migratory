@@ -1,11 +1,11 @@
-package sqlmigration
+package migrator
 
 import (
 	"os"
 	"sync"
 	"testing"
 
-	"github.com/korfairo/migratory/internal/migrator"
+	"github.com/korfairo/migratory/internal/migrator/executor"
 	"github.com/korfairo/migratory/internal/require"
 )
 
@@ -21,7 +21,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 		fields         fields
 		migrationData  []byte
 		createTestFile func(t *testing.T, files *tmpFiles)
-		want           *migrator.ExecutorContainer
+		want           *executors
 		wantErr        bool
 	}{
 		"opening error": {
@@ -55,8 +55,8 @@ func TestSQLPreparerPrepare(t *testing.T) {
 					"SELECT COUNT(2);"
 				files.Create(t, "02_tmp_migration.sql", data)
 			},
-			want: migrator.NewExecutorTxContainer(
-				newSQLExecutor(
+			want: newExecutorTxContainer(
+				executor.NewSQLExecutor(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
 				),
@@ -75,8 +75,8 @@ func TestSQLPreparerPrepare(t *testing.T) {
 					"SELECT COUNT(2);"
 				files.Create(t, "03_tmp_migration.sql", data)
 			},
-			want: migrator.NewExecutorDBContainer(
-				newSQLExecutorNoTx(
+			want: newExecutorDBContainer(
+				executor.NewSQLExecutorNoTx(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
 				),
@@ -87,7 +87,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			preparer := newSQLPreparer(test.fields.sourcePath, osWrapper{})
+			preparer := newSQLPreparer(test.fields.sourcePath)
 
 			if test.createTestFile != nil {
 				test.createTestFile(t, testFiles)
@@ -101,7 +101,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 				require.NoError(t, err, "SeekMigrations(...) error")
 			}
 
-			require.Equal(t, got, test.want, "SeekMigrations(...) ExecutorContainer")
+			require.Equal(t, got, test.want, "SeekMigrations(...) executors")
 		})
 	}
 }
