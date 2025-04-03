@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/korfairo/migratory/internal/migrator/executors"
+	sqlexec "github.com/korfairo/migratory/internal/migrator/executors"
 	"github.com/korfairo/migratory/internal/require"
 )
 
@@ -21,7 +21,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 		fields         fields
 		migrationData  []byte
 		createTestFile func(t *testing.T, files *tmpFiles)
-		want           *Executors
+		want           *executors
 		wantErr        bool
 	}{
 		"opening error": {
@@ -56,7 +56,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 				files.Create(t, "02_tmp_migration.sql", data)
 			},
 			want: newExecutorTxContainer(
-				executors.NewSQLExecutor(
+				sqlexec.NewSQLExecutor(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
 				),
@@ -76,7 +76,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 				files.Create(t, "03_tmp_migration.sql", data)
 			},
 			want: newExecutorDBContainer(
-				executors.NewSQLExecutorNoTx(
+				sqlexec.NewSQLExecutorNoTx(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
 				),
@@ -101,7 +101,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 				require.NoError(t, err, "SeekMigrations(...) error")
 			}
 
-			require.Equal(t, got, test.want, "SeekMigrations(...) Executors")
+			require.Equal(t, got, test.want, "SeekMigrations(...) executors")
 		})
 	}
 }

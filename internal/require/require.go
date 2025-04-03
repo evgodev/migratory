@@ -1,3 +1,5 @@
+// Package require provides assertion methods for performing conditional checks in tests, halting on failure.
+// This package avoids introducing extra dependencies in the library.
 package require
 
 import (

@@ -5,9 +5,10 @@ import (
 	"database/sql"
 )
 
-// Executors encapsulates execution logic for database migrations, supporting both transactional and non-transactional modes.
+// executors encapsulates execution logic for database migrations,
+// supporting both transactional and non-transactional modes.
 // It holds either an ExecutorTx or an ExecutorDB to execute migrations based on the execution context.
-type Executors struct {
+type executors struct {
 	useDB      bool
 	executorTx ExecutorTx
 	executorDB ExecutorDB
@@ -23,24 +24,24 @@ type ExecutorDB interface {
 	Down(ctx context.Context, db *sql.DB) error
 }
 
-func newExecutorTxContainer(executorTx ExecutorTx) *Executors {
-	return &Executors{
+func newExecutorTxContainer(executorTx ExecutorTx) *executors {
+	return &executors{
 		useDB:      false,
 		executorTx: executorTx,
 	}
 }
 
-func newExecutorDBContainer(executorDB ExecutorDB) *Executors {
-	return &Executors{
+func newExecutorDBContainer(executorDB ExecutorDB) *executors {
+	return &executors{
 		useDB:      true,
 		executorDB: executorDB,
 	}
 }
 
-func (e Executors) ExecutorTx() ExecutorTx {
+func (e executors) ExecutorTx() ExecutorTx {
 	return e.executorTx
 }
 
-func (e Executors) ExecutorDB() ExecutorDB {
+func (e executors) ExecutorDB() ExecutorDB {
 	return e.executorDB
 }

@@ -8,25 +8,24 @@ import (
 
 var (
 	ErrMigrationNotPrepared = errors.New("migration is not prepared")
-	ErrNilMigrationExecutor = errors.New("migration Executors is nil")
+	ErrNilMigrationExecutor = errors.New("migration executors is nil")
 	ErrNilMigrationPreparer = errors.New("migration preparer is nil")
-	ErrNilExecutorContainer = errors.New("migration preparer returned nil Executors")
+	ErrNilExecutorContainer = errors.New("migration preparer returned nil executors")
 )
 
 type Migrations []Migration
 
-// Migration represents a database migration with a unique ID, name, and Executors for transactional
+// Migration represents a database migration with a unique ID, name, and executors for transactional
 // or non-transactional use. This type manages whether a migration is prepared for execution and
-// supports lazy loading by delaying Executors initialization through a Preparer.
-// The Preparer is used only during the migration application process.
+// supports lazy loading (SQL migrations are parsed only during the migration application process).
 type Migration struct {
 	id   int64
 	name string
 
 	isPrepared bool
-	preparer   Preparer
+	preparer   *sqlPreparer
 
-	executors Executors
+	executors executors
 }
 
 func NewMigration(id int64, name string, executor ExecutorTx) Migration {
@@ -34,7 +33,7 @@ func NewMigration(id int64, name string, executor ExecutorTx) Migration {
 		id:         id,
 		name:       name,
 		isPrepared: true,
-		executors: Executors{
+		executors: executors{
 			useDB:      false,
 			executorTx: executor,
 		},
@@ -46,19 +45,19 @@ func NewMigrationNoTx(id int64, name string, executorDB ExecutorDB) Migration {
 		id:         id,
 		name:       name,
 		isPrepared: true,
-		executors: Executors{
+		executors: executors{
 			useDB:      true,
 			executorDB: executorDB,
 		},
 	}
 }
 
-func NewMigrationWithPreparer(id int64, name string, preparer Preparer) Migration {
+func NewSQLMigration(id int64, name, filePath string) Migration {
 	return Migration{
 		id:         id,
 		name:       name,
 		isPrepared: false,
-		preparer:   preparer,
+		preparer:   newSQLPreparer(filePath),
 	}
 }
 

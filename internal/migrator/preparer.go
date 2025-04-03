@@ -4,28 +4,24 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/korfairo/migratory/internal/migrator/executors"
+	sqlexec "github.com/korfairo/migratory/internal/migrator/executors"
 	"github.com/korfairo/migratory/internal/migrator/parser"
 )
 
-type Preparer interface {
-	Prepare() (*Executors, error)
-}
-
 type sqlPreparer struct {
-	sourcePath string
+	filePath string
 }
 
-func newSQLPreparer(sourceFilePath string) sqlPreparer {
-	return sqlPreparer{
-		sourcePath: sourceFilePath,
+func newSQLPreparer(filePath string) *sqlPreparer {
+	return &sqlPreparer{
+		filePath: filePath,
 	}
 }
 
-func (s sqlPreparer) Prepare() (*Executors, error) {
-	file, err := os.Open(s.sourcePath)
+func (s sqlPreparer) Prepare() (*executors, error) {
+	file, err := os.Open(s.filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file at path %s: %w", s.sourcePath, err)
+		return nil, fmt.Errorf("failed to open file at path %s: %w", s.filePath, err)
 	}
 	defer func() {
 		_ = file.Close()
@@ -33,15 +29,15 @@ func (s sqlPreparer) Prepare() (*Executors, error) {
 
 	parsed, err := parser.ParseMigration(file)
 	if parsed == nil || err != nil {
-		return nil, fmt.Errorf("failed to parse migration %s: %w", s.sourcePath, err)
+		return nil, fmt.Errorf("failed to parse migration %s: %w", s.filePath, err)
 	}
 
-	var container *Executors
+	var container *executors
 	if parsed.DisableTransactionUp || parsed.DisableTransactionDown {
-		executor := executors.NewSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
+		executor := sqlexec.NewSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
 		container = newExecutorDBContainer(executor)
 	} else {
-		executor := executors.NewSQLExecutor(parsed.UpStatements, parsed.DownStatements)
+		executor := sqlexec.NewSQLExecutor(parsed.UpStatements, parsed.DownStatements)
 		container = newExecutorTxContainer(executor)
 	}
 

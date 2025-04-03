@@ -96,8 +96,7 @@ func parseMigrationFiles(filePaths []string) (Migrations, error) {
 		}
 
 		uniqueIDMap[id] = struct{}{}
-		migrations = append(migrations,
-			NewMigrationWithPreparer(id, name, newSQLPreparer(filePath)))
+		migrations = append(migrations, NewSQLMigration(id, name, filePath))
 	}
 
 	return migrations, nil
