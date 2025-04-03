@@ -3,8 +3,8 @@ package migratory
 import "github.com/korfairo/migratory/internal/migrator"
 
 const (
-	Postgres   Dialect = migrator.DialectPostgres
-	ClickHouse Dialect = migrator.DialectClickHouse
+	Postgres   Dialect = migrator.Postgres
+	ClickHouse Dialect = migrator.ClickHouse
 
 	migrationTypeGo  = "go"
 	migrationTypeSQL = "sql"

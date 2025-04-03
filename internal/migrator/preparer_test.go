@@ -5,6 +5,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/korfairo/migratory/internal/migrator/executors"
 	"github.com/korfairo/migratory/internal/require"
 )
 
@@ -55,7 +56,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 				files.Create(t, "02_tmp_migration.sql", data)
 			},
 			want: NewExecutorTxContainer(
-				newSQLExecutor(
+				executors.NewSQLExecutor(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
 				),
@@ -75,7 +76,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 				files.Create(t, "03_tmp_migration.sql", data)
 			},
 			want: NewExecutorDBContainer(
-				newSQLExecutorNoTx(
+				executors.NewSQLExecutorNoTx(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
 				),

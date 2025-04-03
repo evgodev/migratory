@@ -1,12 +1,11 @@
 package migrator
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"os"
 
-	"github.com/korfairo/migratory/internal/parser"
+	"github.com/korfairo/migratory/internal/migrator/executors"
+	"github.com/korfairo/migratory/internal/migrator/parser"
 )
 
 type sqlPreparer struct {
@@ -35,72 +34,12 @@ func (s sqlPreparer) Prepare() (*ExecutorContainer, error) {
 
 	var container *ExecutorContainer
 	if parsed.DisableTransactionUp || parsed.DisableTransactionDown {
-		executor := newSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
+		executor := executors.NewSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
 		container = NewExecutorDBContainer(executor)
 	} else {
-		executor := newSQLExecutor(parsed.UpStatements, parsed.DownStatements)
+		executor := executors.NewSQLExecutor(parsed.UpStatements, parsed.DownStatements)
 		container = NewExecutorTxContainer(executor)
 	}
 
 	return container, nil
-}
-
-type sqlExecutor struct {
-	statements statements
-}
-
-type statements struct {
-	up, down []string
-}
-
-func newSQLExecutor(up, down []string) sqlExecutor {
-	return sqlExecutor{
-		statements: statements{
-			up:   up,
-			down: down,
-		},
-	}
-}
-
-func (s sqlExecutor) UpTx(ctx context.Context, tx *sql.Tx) error {
-	return execute(ctx, tx, s.statements.up)
-}
-
-func (s sqlExecutor) DownTx(ctx context.Context, tx *sql.Tx) error {
-	return execute(ctx, tx, s.statements.down)
-}
-
-type sqlExecutorNoTx struct {
-	statements statements
-}
-
-func newSQLExecutorNoTx(up, down []string) sqlExecutorNoTx {
-	return sqlExecutorNoTx{
-		statements: statements{
-			up:   up,
-			down: down,
-		},
-	}
-}
-
-func (s sqlExecutorNoTx) Up(ctx context.Context, db *sql.DB) error {
-	return execute(ctx, db, s.statements.up)
-}
-
-func (s sqlExecutorNoTx) Down(ctx context.Context, db *sql.DB) error {
-	return execute(ctx, db, s.statements.down)
-}
-
-type QueryExecutor interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-}
-
-func execute(ctx context.Context, executor QueryExecutor, statements []string) error {
-	for _, query := range statements {
-		_, err := executor.ExecContext(ctx, query)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

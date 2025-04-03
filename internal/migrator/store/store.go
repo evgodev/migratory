@@ -1,4 +1,4 @@
-package migrator
+package store
 
 import (
 	"context"
@@ -6,11 +6,26 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/korfairo/migratory/internal/migrator/dialect"
 )
 
-type QueryManager interface {
+const (
+	Postgres   Dialect = "postgres"
+	ClickHouse Dialect = "clickhouse"
+)
+
+var (
+	ErrUnsupportedDialect = errors.New("unsupported dialect")
+	ErrNoRows             = errors.New("no rows in migrations table")
+)
+
+type Store struct {
+	tableName    string
+	queryManager QueryBuilder
+}
+
+type Dialect = string
+
+type QueryBuilder interface {
 	MigrationsTableExists(tableName string) string
 	CreateMigrationsTable(tableName string) string
 	InsertMigration(tableName string) string
@@ -19,35 +34,10 @@ type QueryManager interface {
 	SelectLastMigrationID(tableName string) string
 }
 
-const (
-	DialectPostgres   = "postgres"
-	DialectClickHouse = "clickhouse"
-)
-
-var ErrUnsupportedDialect = errors.New("unsupported dialect")
-
-type store struct {
-	tableName string
-
-	queryManager QueryManager
-}
-
-func newStore(dbDialect, tableName string) (*store, error) {
-	var queryManager QueryManager
-
-	switch dbDialect {
-	case DialectPostgres:
-		queryManager = &dialect.Postgres{}
-	case DialectClickHouse:
-		queryManager = &dialect.Clickhouse{}
-	default:
-		return nil, ErrUnsupportedDialect
-	}
-
-	return &store{
-		queryManager: queryManager,
-		tableName:    tableName,
-	}, nil
+type MigrationResult struct {
+	ID        int64
+	Name      string
+	AppliedAt time.Time
 }
 
 type database interface {
@@ -56,7 +46,25 @@ type database interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-func (s store) migrationsTableExists(ctx context.Context, db database) (bool, error) {
+func New(dbDialect, tableName string) (*Store, error) {
+	var queryBuilder QueryBuilder
+
+	switch dbDialect {
+	case Postgres:
+		queryBuilder = &postgresQueryBuilder{}
+	case ClickHouse:
+		queryBuilder = &clickhouseQueryBuilder{}
+	default:
+		return nil, ErrUnsupportedDialect
+	}
+
+	return &Store{
+		queryManager: queryBuilder,
+		tableName:    tableName,
+	}, nil
+}
+
+func (s Store) MigrationsTableExists(ctx context.Context, db database) (bool, error) {
 	q := s.queryManager.MigrationsTableExists(s.tableName)
 	row := db.QueryRowContext(ctx, q)
 
@@ -68,27 +76,25 @@ func (s store) migrationsTableExists(ctx context.Context, db database) (bool, er
 	return exists, nil
 }
 
-func (s store) createMigrationsTable(ctx context.Context, db database) error {
+func (s Store) CreateMigrationsTable(ctx context.Context, db database) error {
 	q := s.queryManager.CreateMigrationsTable(s.tableName)
 	_, err := db.ExecContext(ctx, q)
 	return err
 }
 
-func (s store) insertMigration(ctx context.Context, db database, migrationName string, id int64) error {
+func (s Store) InsertMigration(ctx context.Context, db database, migrationName string, id int64) error {
 	q := s.queryManager.InsertMigration(s.tableName)
 	_, err := db.ExecContext(ctx, q, id, migrationName)
 	return err
 }
 
-func (s store) deleteMigration(ctx context.Context, db database, id int64) error {
+func (s Store) DeleteMigration(ctx context.Context, db database, id int64) error {
 	q := s.queryManager.DeleteMigration(s.tableName)
 	_, err := db.ExecContext(ctx, q, id)
 	return err
 }
 
-var ErrNoRows = errors.New("no rows in migrations table")
-
-func (s store) selectLastID(ctx context.Context, db database) (int64, error) {
+func (s Store) SelectLastID(ctx context.Context, db database) (int64, error) {
 	q := s.queryManager.SelectLastMigrationID(s.tableName)
 	row := db.QueryRowContext(ctx, q)
 
@@ -106,13 +112,7 @@ func (s store) selectLastID(ctx context.Context, db database) (int64, error) {
 	return id, nil
 }
 
-type MigrationResult struct {
-	ID        int64
-	Name      string
-	AppliedAt time.Time
-}
-
-func (s store) listMigrations(ctx context.Context, db database) ([]MigrationResult, error) {
+func (s Store) ListMigrations(ctx context.Context, db database) ([]MigrationResult, error) {
 	q := s.queryManager.ListMigrations(s.tableName)
 	rows, err := db.QueryContext(ctx, q)
 	if err != nil {

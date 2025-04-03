@@ -3,7 +3,6 @@ package migrator
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -24,12 +23,6 @@ var (
 	ErrNoSeparator      = errors.New("no separator found in file name")
 	ErrParseID          = errors.New("unable to parse ID in file name")
 )
-
-type FileSystem interface {
-	Open(name string) (fs.File, error)
-	Stat(name string) (os.FileInfo, error)
-	Glob(pattern string) ([]string, error)
-}
 
 // ParseMigrationFileName parses a given migration file name into its ID and name.
 func ParseMigrationFileName(fileName string) (id int64, migrationName string, err error) {
