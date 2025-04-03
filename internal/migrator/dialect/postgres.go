@@ -2,9 +2,9 @@ package dialect
 
 import "fmt"
 
-type Postgres struct{}
-
 const schemaName = "public"
+
+type Postgres struct{}
 
 func (p *Postgres) MigrationsTableExists(tableName string) string {
 	q := `SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = '%s' AND tablename  = '%s')`

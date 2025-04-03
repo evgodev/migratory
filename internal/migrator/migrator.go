@@ -20,23 +20,23 @@ type Migrator struct {
 }
 
 func New(ctx context.Context, db *sql.DB, dialect, tableName string) (*Migrator, error) {
-	store, err := newStore(dialect, tableName)
+	s, err := newStore(dialect, tableName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get store: %w", err)
 	}
 
-	exists, err := store.migrationsTableExists(ctx, db)
+	exists, err := s.migrationsTableExists(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if migrations table exists: %w", err)
 	}
 
 	if !exists {
-		if err = store.createMigrationsTable(ctx, db); err != nil {
+		if err = s.createMigrationsTable(ctx, db); err != nil {
 			return nil, fmt.Errorf("failed to create migrations table: %w", err)
 		}
 	}
 
-	return &Migrator{store}, nil
+	return &Migrator{s}, nil
 }
 
 func (m Migrator) Up(ctx context.Context, migrations Migrations, db *sql.DB, force bool) (n int, err error) {

@@ -1,4 +1,4 @@
-package sql
+package migrator
 
 import (
 	"errors"
@@ -9,8 +9,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/korfairo/migratory/internal/migrator"
 )
 
 const (
@@ -55,7 +53,7 @@ func ParseMigrationFileName(fileName string) (id int64, migrationName string, er
 
 // SeekMigrations identifies and parses migration files in the given directory using the provided file system interface.
 // Returns a sorted list of migration objects or an error if the directory or files are invalid.
-func SeekMigrations(dir string) (migrator.Migrations, error) {
+func SeekMigrations(dir string) (Migrations, error) {
 	if _, err := os.Stat(dir); err != nil {
 		return nil, errors.Join(ErrDirectoryCheck, err)
 	}
@@ -90,8 +88,8 @@ func findMigrationFiles(dir string) ([]string, error) {
 	return migrationFiles, nil
 }
 
-func parseMigrationFiles(filePaths []string) (migrator.Migrations, error) {
-	var migrations migrator.Migrations
+func parseMigrationFiles(filePaths []string) (Migrations, error) {
+	var migrations Migrations
 	uniqueIDMap := make(map[int64]struct{}, len(filePaths))
 
 	for _, filePath := range filePaths {
@@ -106,7 +104,7 @@ func parseMigrationFiles(filePaths []string) (migrator.Migrations, error) {
 
 		uniqueIDMap[id] = struct{}{}
 		migrations = append(migrations,
-			migrator.NewMigrationWithPreparer(id, name, newSQLPreparer(filePath)))
+			NewMigrationWithPreparer(id, name, newSQLPreparer(filePath)))
 	}
 
 	return migrations, nil

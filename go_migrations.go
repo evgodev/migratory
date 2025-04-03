@@ -8,7 +8,6 @@ import (
 	"runtime"
 
 	"github.com/korfairo/migratory/internal/migrator"
-	sqlmigration "github.com/korfairo/migratory/internal/sql"
 )
 
 var globalGoMigrations []goMigration
@@ -108,7 +107,7 @@ func registerGoMigrations(goMigrations []goMigration) (migrator.Migrations, erro
 	var migrations migrator.Migrations
 	uniqueIDMap := make(map[int64]struct{}, goMigrationsCount)
 	for _, m := range goMigrations {
-		id, name, err := sqlmigration.ParseMigrationFileName(m.sourceName)
+		id, name, err := migrator.ParseMigrationFileName(m.sourceName)
 		if err != nil {
 			return nil, err
 		}
