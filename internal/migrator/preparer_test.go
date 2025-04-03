@@ -21,7 +21,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 		fields         fields
 		migrationData  []byte
 		createTestFile func(t *testing.T, files *tmpFiles)
-		want           *ExecutorContainer
+		want           *Executors
 		wantErr        bool
 	}{
 		"opening error": {
@@ -55,7 +55,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 					"SELECT COUNT(2);"
 				files.Create(t, "02_tmp_migration.sql", data)
 			},
-			want: NewExecutorTxContainer(
+			want: newExecutorTxContainer(
 				executors.NewSQLExecutor(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
@@ -75,7 +75,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 					"SELECT COUNT(2);"
 				files.Create(t, "03_tmp_migration.sql", data)
 			},
-			want: NewExecutorDBContainer(
+			want: newExecutorDBContainer(
 				executors.NewSQLExecutorNoTx(
 					[]string{"SELECT COUNT(1);\n"},
 					[]string{"SELECT COUNT(2);\n"},
@@ -101,7 +101,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 				require.NoError(t, err, "SeekMigrations(...) error")
 			}
 
-			require.Equal(t, got, test.want, "SeekMigrations(...) ExecutorContainer")
+			require.Equal(t, got, test.want, "SeekMigrations(...) Executors")
 		})
 	}
 }

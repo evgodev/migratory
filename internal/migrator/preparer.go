@@ -8,6 +8,10 @@ import (
 	"github.com/korfairo/migratory/internal/migrator/parser"
 )
 
+type Preparer interface {
+	Prepare() (*Executors, error)
+}
+
 type sqlPreparer struct {
 	sourcePath string
 }
@@ -18,7 +22,7 @@ func newSQLPreparer(sourceFilePath string) sqlPreparer {
 	}
 }
 
-func (s sqlPreparer) Prepare() (*ExecutorContainer, error) {
+func (s sqlPreparer) Prepare() (*Executors, error) {
 	file, err := os.Open(s.sourcePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file at path %s: %w", s.sourcePath, err)
@@ -32,13 +36,13 @@ func (s sqlPreparer) Prepare() (*ExecutorContainer, error) {
 		return nil, fmt.Errorf("failed to parse migration %s: %w", s.sourcePath, err)
 	}
 
-	var container *ExecutorContainer
+	var container *Executors
 	if parsed.DisableTransactionUp || parsed.DisableTransactionDown {
 		executor := executors.NewSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
-		container = NewExecutorDBContainer(executor)
+		container = newExecutorDBContainer(executor)
 	} else {
 		executor := executors.NewSQLExecutor(parsed.UpStatements, parsed.DownStatements)
-		container = NewExecutorTxContainer(executor)
+		container = newExecutorTxContainer(executor)
 	}
 
 	return container, nil
