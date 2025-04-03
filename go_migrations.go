@@ -11,6 +11,8 @@ import (
 	"github.com/korfairo/migratory/internal/sqlmigration"
 )
 
+var globalGoMigrations []goMigration
+
 // GoMigrateFn defines a function type for performing database migrations using a context and transaction.
 type GoMigrateFn func(ctx context.Context, tx *sql.Tx) error
 
@@ -31,8 +33,6 @@ func AddMigrationNoTx(up, down GoMigrateNoTxFn) {
 	executorNoTx := newGoExecutorNoTx(up, down)
 	addGoMigrationNoTx(fileName, executorNoTx)
 }
-
-var globalGoMigrations []goMigration
 
 func addGoMigration(fileName string, executor goExecutor) {
 	globalGoMigrations = append(globalGoMigrations, goMigration{

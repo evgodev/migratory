@@ -21,6 +21,7 @@ func main() {
 
 	// Set the SQL migrations directory
 	migratory.SetSQLDirectory("./migrations")
+	migratory.SetDialect(migratory.Postgres)
 
 	// Apply all migrations using SQL files from the directory
 	count, err := migratory.Up(db)

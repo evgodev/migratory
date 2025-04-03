@@ -1,4 +1,4 @@
-package command
+package cli
 
 import (
 	"context"
@@ -19,7 +19,7 @@ from migrations table in your database. Command creates migrations table if not 
 migratory dbversion -d postgresql://role:password@127.0.0.1:5432/database
 migratory dbversion -d postgresql://role:password@127.0.0.1:5432/database -s my_schema -t my_migrations_table`,
 	Run: func(_ *cobra.Command, _ []string) {
-		version, err := getDBVersion(config.Schema, config.Table)
+		version, err := getDBVersion(config.Table, config.Dialect)
 		if err != nil {
 			fmt.Printf("unable to get database version: %s\n", err)
 			os.Exit(1)
@@ -32,7 +32,7 @@ func init() {
 	rootCmd.AddCommand(dbVersionCmd)
 }
 
-func getDBVersion(schema, table string) (int64, error) {
+func getDBVersion(table, dialect string) (int64, error) {
 	db, err := sql.Open("postgres", config.DSN)
 	if err != nil {
 		return 0, fmt.Errorf("could not open database: %w", err)
@@ -46,12 +46,12 @@ func getDBVersion(schema, table string) (int64, error) {
 	}()
 
 	ctx := context.Background()
-	migrator, err := migrator.New(ctx, db, "postgres", schema, table)
+	m, err := migrator.New(ctx, db, dialect, table)
 	if err != nil {
 		return 0, fmt.Errorf("could not create migrator: %w", err)
 	}
 
-	version, err := migrator.GetDBVersion(ctx, db)
+	version, err := m.GetDBVersion(ctx, db)
 	if err != nil {
 		return 0, fmt.Errorf("failed to GetDBVersion(...): %w", err)
 	}

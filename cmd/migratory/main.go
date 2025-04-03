@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/korfairo/migratory/internal/command"
+	"github.com/korfairo/migratory/internal/cli"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	command.Execute()
+	cli.Execute()
 }

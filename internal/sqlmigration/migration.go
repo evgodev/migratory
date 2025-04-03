@@ -7,7 +7,7 @@ import (
 	"io/fs"
 
 	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/sqlmigration/parser"
+	"github.com/korfairo/migratory/internal/parser"
 )
 
 type sqlExecutor struct {

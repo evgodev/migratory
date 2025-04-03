@@ -10,30 +10,42 @@ import (
 	"github.com/korfairo/migratory/internal/migrator/dialect"
 )
 
-const DialectPostgres = "postgres"
+type QueryManager interface {
+	MigrationsTableExists(tableName string) string
+	CreateMigrationsTable(tableName string) string
+	InsertMigration(tableName string) string
+	DeleteMigration(tableName string) string
+	ListMigrations(tableName string) string
+	SelectLastMigrationID(tableName string) string
+}
+
+const (
+	DialectPostgres   = "postgres"
+	DialectClickHouse = "clickhouse"
+)
 
 var ErrUnsupportedDialect = errors.New("unsupported dialect")
 
 type store struct {
-	schemaName string
-	tableName  string
+	tableName string
 
-	queryManager dialect.QueryManager
+	queryManager QueryManager
 }
 
-func newStore(dbDialect, schemaName, tableName string) (*store, error) {
-	var queryManager dialect.QueryManager
+func newStore(dbDialect, tableName string) (*store, error) {
+	var queryManager QueryManager
 
 	switch dbDialect {
 	case DialectPostgres:
 		queryManager = &dialect.Postgres{}
+	case DialectClickHouse:
+		queryManager = &dialect.Clickhouse{}
 	default:
 		return nil, ErrUnsupportedDialect
 	}
 
 	return &store{
 		queryManager: queryManager,
-		schemaName:   schemaName,
 		tableName:    tableName,
 	}, nil
 }
@@ -45,7 +57,7 @@ type database interface {
 }
 
 func (s store) migrationsTableExists(ctx context.Context, db database) (bool, error) {
-	q := s.queryManager.MigrationsTableExists(s.schemaName, s.tableName)
+	q := s.queryManager.MigrationsTableExists(s.tableName)
 	row := db.QueryRowContext(ctx, q)
 
 	var exists bool
@@ -57,19 +69,19 @@ func (s store) migrationsTableExists(ctx context.Context, db database) (bool, er
 }
 
 func (s store) createMigrationsTable(ctx context.Context, db database) error {
-	q := s.queryManager.CreateMigrationsTable(s.schemaName, s.tableName)
+	q := s.queryManager.CreateMigrationsTable(s.tableName)
 	_, err := db.ExecContext(ctx, q)
 	return err
 }
 
 func (s store) insertMigration(ctx context.Context, db database, migrationName string, id int64) error {
-	q := s.queryManager.InsertMigration(s.schemaName, s.tableName)
+	q := s.queryManager.InsertMigration(s.tableName)
 	_, err := db.ExecContext(ctx, q, id, migrationName)
 	return err
 }
 
 func (s store) deleteMigration(ctx context.Context, db database, id int64) error {
-	q := s.queryManager.DeleteMigration(s.schemaName, s.tableName)
+	q := s.queryManager.DeleteMigration(s.tableName)
 	_, err := db.ExecContext(ctx, q, id)
 	return err
 }
@@ -77,7 +89,7 @@ func (s store) deleteMigration(ctx context.Context, db database, id int64) error
 var ErrNoRows = errors.New("no rows in migrations table")
 
 func (s store) selectLastID(ctx context.Context, db database) (int64, error) {
-	q := s.queryManager.SelectLastMigrationID(s.schemaName, s.tableName)
+	q := s.queryManager.SelectLastMigrationID(s.tableName)
 	row := db.QueryRowContext(ctx, q)
 
 	var id int64
@@ -101,7 +113,7 @@ type MigrationResult struct {
 }
 
 func (s store) listMigrations(ctx context.Context, db database) ([]MigrationResult, error) {
-	q := s.queryManager.ListMigrations(s.schemaName, s.tableName)
+	q := s.queryManager.ListMigrations(s.tableName)
 	rows, err := db.QueryContext(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query listMigrations: %w", err)

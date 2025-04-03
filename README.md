@@ -1,12 +1,13 @@
 # Migratory
 
-A minimalistic database migration library and CLI tool for PostgreSQL that supports both Go-based and SQL-based migrations.
+A lightweight and flexible database migration library and CLI tool with minimal dependencies.
 
 ## Features
 
-- **Go migrations**: Code-based migrations that use functions and can work with either `db` (no transaction) or transactional `tx` connections
-- **SQL migrations**: Plain text `.sql` files containing raw SQL statements
-- Works as both a library (Go package) and CLI tool
+- Supports **PostgreSQL** and **ClickHouse**
+- Usable as a library (Go package) or CLI tool
+- **SQL migrations**: `.sql` files with raw SQL statements, supported in both library and CLI.
+- **Go migrations**: Code-based migrations with support for transactional (`tx`) or non-transactional (`db`) connections in the library.
 
 ## Library Usage
 
@@ -155,7 +156,6 @@ go install github.com/korfairo/migratory/cmd/migratory
 | `-d, --db string` | Database connection string | |
 | `--dir string` | Directory with .sql migration files | `.` |
 | `-h, --help` | Show help for migratory | |
-| `-s, --schema string` | Name of the database schema with migrations table | `public` |
 | `-t, --table string` | Name of the migrations table | `migrations` |
 
 You can find detailed information about all commands using the `--help` or `-h` flag.
@@ -169,6 +169,12 @@ Example configuration:
 ```yaml
 directory: /path/to/directory
 dsn: postgres://user:password@localhost:5432/my_db
-schema: public
 table: migrations
 ```
+
+## Changelog
+### [1.1.0] - 2025-04-03
+- Added support for the ClickHouse dialect.
+
+### [1.0.0] - 2025-01-28
+- Initial release of Migratory.

@@ -1,16 +1,22 @@
 package migratory
 
+import "github.com/korfairo/migratory/internal/migrator"
+
 const (
+	Postgres   Dialect = migrator.DialectPostgres
+	ClickHouse Dialect = migrator.DialectClickHouse
+
 	migrationTypeGo  = "go"
 	migrationTypeSQL = "sql"
-	dialectPostgres  = "postgres"
 )
+
+// Dialect determines how the migrations table is managed based on the database system.
+type Dialect = string
 
 type options struct {
 	migrationType string
 	directory     string
 	dialect       string
-	schema        string
 	table         string
 
 	forceUp bool
@@ -18,9 +24,8 @@ type options struct {
 
 var defaultOpts = options{
 	migrationType: migrationTypeGo,
-	dialect:       dialectPostgres,
+	dialect:       Postgres,
 	directory:     ".",
-	schema:        "public",
 	table:         "migrations",
 	forceUp:       false,
 }
@@ -37,23 +42,23 @@ func WithSQLMigrationDir(d string) OptionsFunc {
 	return func(o *options) { o.migrationType = migrationTypeSQL; o.directory = d }
 }
 
-// WithSchema sets the schema name for the options configuration.
-func WithSchema(n string) OptionsFunc {
-	return func(o *options) { o.schema = n }
-}
-
 // WithTable configures a custom table name for tracking migrations within the database.
 func WithTable(n string) OptionsFunc {
 	return func(o *options) { o.table = n }
 }
 
-// WithForce is an OptionsFunc that sets the forceUp flag to true in the options configuration.
+// WithForce allows the migrator to apply any unapplied migrations out of their original sequence,
+// potentially resulting in migrations being applied in a non-linear order.
+// For example, if there are migrations with numbers 1, 2, 3, and migration 2 was not applied before,
+// this option allows you to apply it. Otherwise, the migrator will return an error migrator.ErrDirtyMigrations.
 func WithForce() OptionsFunc {
 	return func(o *options) { o.forceUp = true }
 }
 
-// SetSchema updates the default schema used in database migrations.
-func SetSchema(s string) { defaultOpts.schema = s }
+// WithDialect sets the database dialect.
+func WithDialect(d Dialect) OptionsFunc {
+	return func(o *options) { o.dialect = d }
+}
 
 // SetTable updates the default table name used for managing migrations.
 func SetTable(s string) { defaultOpts.table = s }
@@ -62,6 +67,13 @@ func SetTable(s string) { defaultOpts.table = s }
 func SetSQLDirectory(path string) {
 	defaultOpts.migrationType = migrationTypeSQL
 	defaultOpts.directory = path
+}
+
+// SetDialect sets the default SQL dialect for database migrations.
+// The chosen dialect determines how the migrations table is managed
+// based on the database system (e.g., Postgres, ClickHouse).
+func SetDialect(d Dialect) {
+	defaultOpts.dialect = d
 }
 
 func applyOptions(optionsFns []OptionsFunc) options {
