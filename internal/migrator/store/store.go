@@ -1,3 +1,10 @@
+// Package store provides database migration tracking functionality for various databases.
+// It offers methods to create and manage a migrations table, tracking applied migrations.
+// The package utilizes dialect-specific query builders to generate SQL statements,
+// ensuring a consistent interface across all supported databases.
+//
+// To add support for a new database, implement the QueryBuilder interface for the database
+// and define a new Dialect constant.
 package store
 
 import (

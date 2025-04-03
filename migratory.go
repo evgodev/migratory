@@ -4,12 +4,34 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"runtime"
 	"time"
 
 	"github.com/korfairo/migratory/internal/migrator"
 )
 
 var ErrUnsupportedMigrationType = errors.New("migration type is unsupported")
+
+// GoMigrateFn defines a function type for performing database migrations using a context and transaction.
+type GoMigrateFn func(ctx context.Context, tx *sql.Tx) error
+
+// GoMigrateNoTxFn defines a function type for non-transactional database migrations
+// using a context and a SQL database connection.
+type GoMigrateNoTxFn func(ctx context.Context, db *sql.DB) error
+
+// AddMigration registers a new migration with `up` and `down` functions for handling database schema changes.
+func AddMigration(up, down GoMigrateFn) {
+	_, fileName, _, _ := runtime.Caller(1) //nolint:dogsled
+	executor := newGoExecutor(up, down)
+	addGoMigration(fileName, executor)
+}
+
+// AddMigrationNoTx registers a database migration function pair that operates without transactions.
+func AddMigrationNoTx(up, down GoMigrateNoTxFn) {
+	_, fileName, _, _ := runtime.Caller(1) //nolint:dogsled
+	executorNoTx := newGoExecutorNoTx(up, down)
+	addGoMigrationNoTx(fileName, executorNoTx)
+}
 
 // Up applies all available database migrations in order,
 // using the given database connection and optional configurations.
