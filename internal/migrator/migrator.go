@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	Postgres   Dialect = store.Postgres
-	ClickHouse Dialect = store.ClickHouse
+	Postgres   = store.Postgres
+	ClickHouse = store.ClickHouse
 )
 
 var (
@@ -25,9 +25,6 @@ var (
 type Migrator struct {
 	store *store.Store
 }
-
-// Dialect determines how the migrations table is managed based on the database system.
-type Dialect = string
 
 type MigrationResult struct {
 	ID        int64

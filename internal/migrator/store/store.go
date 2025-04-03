@@ -3,7 +3,7 @@
 // The package utilizes dialect-specific query builders to generate SQL statements,
 // ensuring a consistent interface across all supported databases.
 //
-// To add support for a new database, implement the QueryBuilder interface for the database
+// To add support for a new database, implement the queryBuilder interface for the database
 // and define a new Dialect constant.
 package store
 
@@ -27,12 +27,12 @@ var (
 
 type Store struct {
 	tableName    string
-	queryManager QueryBuilder
+	queryManager queryBuilder
 }
 
 type Dialect = string
 
-type QueryBuilder interface {
+type queryBuilder interface {
 	MigrationsTableExists(tableName string) string
 	CreateMigrationsTable(tableName string) string
 	InsertMigration(tableName string) string
@@ -53,20 +53,20 @@ type database interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-func New(dbDialect, tableName string) (*Store, error) {
-	var queryBuilder QueryBuilder
+func New(dialect Dialect, tableName string) (*Store, error) {
+	var b queryBuilder
 
-	switch dbDialect {
+	switch dialect {
 	case Postgres:
-		queryBuilder = &postgresQueryBuilder{}
+		b = &postgresQueryBuilder{}
 	case ClickHouse:
-		queryBuilder = &clickhouseQueryBuilder{}
+		b = &clickhouseQueryBuilder{}
 	default:
 		return nil, ErrUnsupportedDialect
 	}
 
 	return &Store{
-		queryManager: queryBuilder,
+		queryManager: b,
 		tableName:    tableName,
 	}, nil
 }

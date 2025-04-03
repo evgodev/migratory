@@ -5,11 +5,33 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"runtime"
 
 	"github.com/korfairo/migratory/internal/migrator"
 )
 
 var globalGoMigrations []goMigration
+
+// GoMigrateFn defines a function type for performing database migrations using a context and transaction.
+type GoMigrateFn func(ctx context.Context, tx *sql.Tx) error
+
+// GoMigrateNoTxFn defines a function type for non-transactional database migrations
+// using a context and a SQL database connection.
+type GoMigrateNoTxFn func(ctx context.Context, db *sql.DB) error
+
+// AddMigration registers a new migration with `up` and `down` functions for handling database schema changes.
+func AddMigration(up, down GoMigrateFn) {
+	_, fileName, _, _ := runtime.Caller(1) //nolint:dogsled
+	executor := newGoExecutor(up, down)
+	addGoMigration(fileName, executor)
+}
+
+// AddMigrationNoTx registers a database migration function pair that operates without transactions.
+func AddMigrationNoTx(up, down GoMigrateNoTxFn) {
+	_, fileName, _, _ := runtime.Caller(1) //nolint:dogsled
+	executorNoTx := newGoExecutorNoTx(up, down)
+	addGoMigrationNoTx(fileName, executorNoTx)
+}
 
 func addGoMigration(fileName string, executor goExecutor) {
 	globalGoMigrations = append(globalGoMigrations, goMigration{
@@ -76,7 +98,7 @@ func (g goExecutorNoTx) Down(ctx context.Context, db *sql.DB) error {
 	return g.downFn(ctx, db)
 }
 
-func registerGoMigrations(goMigrations []goMigration) (migrator.Migrations, error) {
+func getGoMigrations(goMigrations []goMigration) (migrator.Migrations, error) {
 	goMigrationsCount := len(goMigrations)
 	if goMigrationsCount == 0 {
 		return nil, errors.New("no migrations were added")
