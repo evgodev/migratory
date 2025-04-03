@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"github.com/korfairo/migratory/internal/migrator/executor"
 )
 
 var (
@@ -28,26 +30,26 @@ type Migration struct {
 	executors executors
 }
 
-func NewMigration(id int64, name string, executor ExecutorTx) Migration {
+func NewGoMigration(id int64, name string, up, down executor.GoMigrateFn) Migration {
 	return Migration{
 		id:         id,
 		name:       name,
 		isPrepared: true,
 		executors: executors{
 			useDB:      false,
-			executorTx: executor,
+			executorTx: executor.NewGoExecutor(up, down),
 		},
 	}
 }
 
-func NewMigrationNoTx(id int64, name string, executorDB ExecutorDB) Migration {
+func NewGoMigrationNoTx(id int64, name string, up, down executor.GoMigrateNoTxFn) Migration {
 	return Migration{
 		id:         id,
 		name:       name,
 		isPrepared: true,
 		executors: executors{
 			useDB:      true,
-			executorDB: executorDB,
+			executorDB: executor.NewGoExecutorNoTx(up, down),
 		},
 	}
 }

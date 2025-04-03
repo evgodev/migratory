@@ -9,7 +9,7 @@ COMPOSE_PATH = ./docker-compose.yml
 COMPOSE_ENV = DB_NAME=$(DB_NAME) DB_USER=$(DB_USER) DB_PASSWORD=$(DB_PASSWORD) POSTGRES_PORT=$(POSTGRES_PORT)
 
 integration-test: postgres-up
-	go test ./test/ -dsn $(POSTGRES_DSN) -tags integration
+	go test . -dsn $(POSTGRES_DSN) -tags integration
 
 postgres-up:
 	$(COMPOSE_ENV) docker compose -f $(COMPOSE_PATH) up -d

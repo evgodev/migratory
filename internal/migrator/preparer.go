@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	sqlexec "github.com/korfairo/migratory/internal/migrator/executors"
+	"github.com/korfairo/migratory/internal/migrator/executor"
 	"github.com/korfairo/migratory/internal/migrator/parser"
 )
 
@@ -34,11 +34,11 @@ func (s sqlPreparer) Prepare() (*executors, error) {
 
 	var container *executors
 	if parsed.DisableTransactionUp || parsed.DisableTransactionDown {
-		executor := sqlexec.NewSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
-		container = newExecutorDBContainer(executor)
+		e := executor.NewSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
+		container = newExecutorDBContainer(e)
 	} else {
-		executor := sqlexec.NewSQLExecutor(parsed.UpStatements, parsed.DownStatements)
-		container = newExecutorTxContainer(executor)
+		e := executor.NewSQLExecutor(parsed.UpStatements, parsed.DownStatements)
+		container = newExecutorTxContainer(e)
 	}
 
 	return container, nil
