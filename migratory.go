@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/sqlmigration"
+	sqlmigration "github.com/korfairo/migratory/internal/sql"
 )
 
 var ErrUnsupportedMigrationType = errors.New("migration type is unsupported")
@@ -144,7 +144,7 @@ func getMigrations(migrationType, directory string) (m migrator.Migrations, err 
 	case migrationTypeGo:
 		m, err = registerGoMigrations(globalGoMigrations)
 	case migrationTypeSQL:
-		m, err = sqlmigration.SeekMigrations(directory, nil)
+		m, err = sqlmigration.SeekMigrations(directory)
 	default:
 		return nil, ErrUnsupportedMigrationType
 	}

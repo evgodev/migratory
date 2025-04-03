@@ -1,4 +1,4 @@
-package sqlmigration
+package sql
 
 import (
 	"os"
@@ -87,7 +87,7 @@ func TestSQLPreparerPrepare(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			preparer := newSQLPreparer(test.fields.sourcePath, osWrapper{})
+			preparer := newSQLPreparer(test.fields.sourcePath)
 
 			if test.createTestFile != nil {
 				test.createTestFile(t, testFiles)

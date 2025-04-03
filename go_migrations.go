@@ -8,7 +8,7 @@ import (
 	"runtime"
 
 	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/sqlmigration"
+	sqlmigration "github.com/korfairo/migratory/internal/sql"
 )
 
 var globalGoMigrations []goMigration

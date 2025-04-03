@@ -1,14 +1,50 @@
-package sqlmigration
+package sql
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io/fs"
+	"os"
 
 	"github.com/korfairo/migratory/internal/migrator"
 	"github.com/korfairo/migratory/internal/parser"
 )
+
+type sqlPreparer struct {
+	sourcePath string
+}
+
+func newSQLPreparer(sourceFilePath string) sqlPreparer {
+	return sqlPreparer{
+		sourcePath: sourceFilePath,
+	}
+}
+
+func (s sqlPreparer) Prepare() (*migrator.ExecutorContainer, error) {
+	file, err := os.Open(s.sourcePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file at path %s: %w", s.sourcePath, err)
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	parsed, err := parser.ParseMigration(file)
+	if parsed == nil || err != nil {
+		return nil, fmt.Errorf("failed to parse migration %s: %w", s.sourcePath, err)
+	}
+
+	var container *migrator.ExecutorContainer
+	if parsed.DisableTransactionUp || parsed.DisableTransactionDown {
+		executor := newSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
+		container = migrator.NewExecutorDBContainer(executor)
+	} else {
+		executor := newSQLExecutor(parsed.UpStatements, parsed.DownStatements)
+		container = migrator.NewExecutorTxContainer(executor)
+	}
+
+	return container, nil
+}
 
 type sqlExecutor struct {
 	statements statements
@@ -68,42 +104,4 @@ func execute(ctx context.Context, executor QueryExecutor, statements []string) e
 		}
 	}
 	return nil
-}
-
-type sqlPreparer struct {
-	sourcePath string
-	fsys       fs.FS
-}
-
-func newSQLPreparer(sourceFilePath string, fsys fs.FS) sqlPreparer {
-	return sqlPreparer{
-		sourcePath: sourceFilePath,
-		fsys:       fsys,
-	}
-}
-
-func (s sqlPreparer) Prepare() (*migrator.ExecutorContainer, error) {
-	file, err := s.fsys.Open(s.sourcePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file at path %s: %w", s.sourcePath, err)
-	}
-	defer func() {
-		_ = file.Close()
-	}()
-
-	parsed, err := parser.ParseMigration(file)
-	if parsed == nil || err != nil {
-		return nil, fmt.Errorf("failed to parse migration %s: %w", s.sourcePath, err)
-	}
-
-	var container *migrator.ExecutorContainer
-	if parsed.DisableTransactionUp || parsed.DisableTransactionDown {
-		executor := newSQLExecutorNoTx(parsed.UpStatements, parsed.DownStatements)
-		container = migrator.NewExecutorDBContainer(executor)
-	} else {
-		executor := newSQLExecutor(parsed.UpStatements, parsed.DownStatements)
-		container = migrator.NewExecutorTxContainer(executor)
-	}
-
-	return container, nil
 }

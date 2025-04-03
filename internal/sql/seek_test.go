@@ -1,4 +1,4 @@
-package sqlmigration
+package sql
 
 import (
 	"testing"
