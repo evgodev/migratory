@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/korfairo/migratory/internal/migrator/executor"
-	"github.com/korfairo/migratory/internal/migrator/parser"
+	"github.com/evgodev/migratory/internal/migrator/executor"
+	"github.com/evgodev/migratory/internal/migrator/parser"
 )
 
 type sqlPreparer struct {

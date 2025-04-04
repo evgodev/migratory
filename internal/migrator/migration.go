@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/korfairo/migratory/internal/migrator/executor"
+	"github.com/evgodev/migratory/internal/migrator/executor"
 )
 
 var (

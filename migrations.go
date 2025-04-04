@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"runtime"
 
-	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/migrator/executor"
+	"github.com/evgodev/migratory/internal/migrator"
+	"github.com/evgodev/migratory/internal/migrator/executor"
 )
 
 var goMigrations []goMigration

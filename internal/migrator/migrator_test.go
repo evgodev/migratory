@@ -3,7 +3,7 @@ package migrator
 import (
 	"testing"
 
-	"github.com/korfairo/migratory/internal/require"
+	"github.com/evgodev/migratory/internal/require"
 )
 
 func TestFindMissingMigrations(t *testing.T) {

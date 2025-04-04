@@ -15,7 +15,7 @@ A lightweight and flexible database migration library and CLI tool with minimal 
 Install the package:
 
 ```shell
-go get github.com/korfairo/migratory
+go get github.com/evgodev/migratory
 ```
 
 #### Migration Registration
@@ -134,7 +134,7 @@ Each operation above has a context-aware equivalent:
 Install the CLI tool:
 
 ```shell
-go install github.com/korfairo/migratory/cmd/migratory
+go install github.com/evgodev/migratory/cmd/migratory
 ```
 
 ### Available Commands

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/korfairo/migratory/internal/migrator"
+	"github.com/evgodev/migratory/internal/migrator"
 )
 
 func rollback(dir, table, dialect string, redo bool) error {

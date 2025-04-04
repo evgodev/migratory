@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/korfairo/migratory/internal/migrator/store"
+	"github.com/evgodev/migratory/internal/migrator/store"
 )
 
 const (
