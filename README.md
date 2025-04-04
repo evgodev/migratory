@@ -174,11 +174,5 @@ table: migrations
 ```
 
 ## Changelog
-### [1.1.1] - 2025-04-03
-- Refactored migrator package to improve readability.
-
-### [1.1.0] - 2025-04-03
-- Added support for the ClickHouse dialect.
-
 ### [1.0.0] - 2025-01-28
 - Initial release of Migratory.
