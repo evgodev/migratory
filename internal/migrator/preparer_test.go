@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/korfairo/migratory/internal/migrator/executor"
-	"github.com/korfairo/migratory/internal/require"
+	"github.com/evgodev/migratory/internal/migrator/executor"
+	"github.com/evgodev/migratory/internal/require"
 )
 
 func TestSQLPreparerPrepare(t *testing.T) {

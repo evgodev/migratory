@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/korfairo/migratory"
+	"github.com/evgodev/migratory"
 )
 
 func init() {

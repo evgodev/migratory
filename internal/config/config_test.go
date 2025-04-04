@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/require"
+	"github.com/evgodev/migratory/internal/migrator"
+	"github.com/evgodev/migratory/internal/require"
 )
 
 func TestReadConfig(t *testing.T) {

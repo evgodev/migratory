@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/korfairo/migratory"
-	"github.com/korfairo/migratory/internal/migrator"
-	"github.com/korfairo/migratory/internal/require"
-	_ "github.com/korfairo/migratory/test/testdata"
+	"github.com/evgodev/migratory"
+	"github.com/evgodev/migratory/internal/migrator"
+	"github.com/evgodev/migratory/internal/require"
+	_ "github.com/evgodev/migratory/test/testdata"
 
 	_ "github.com/lib/pq"
 )

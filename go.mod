@@ -1,4 +1,4 @@
-module github.com/korfairo/migratory
+module github.com/evgodev/migratory
 
 go 1.24
 

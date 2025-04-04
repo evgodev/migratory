@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/korfairo/migratory/internal/migrator"
+	"github.com/evgodev/migratory/internal/migrator"
 	"github.com/spf13/cobra"
 )
 

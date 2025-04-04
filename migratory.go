@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/korfairo/migratory/internal/migrator"
+	"github.com/evgodev/migratory/internal/migrator"
 )
 
 var (

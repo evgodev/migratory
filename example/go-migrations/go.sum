@@ -1,6 +1,6 @@
-github.com/korfairo/migratory v0.0.0-20250128094014-5ba55ae6f6a7 h1:vzjkLnGeXlwJ+V2Ua5QqeFrpPRsFBjAXm8yyyyXSP30=
-github.com/korfairo/migratory v0.0.0-20250128094014-5ba55ae6f6a7/go.mod h1:j2nGNy1okt3gMDzTmtog8s1qH74KwUjCwaGz9KP33a0=
-github.com/korfairo/migratory v1.0.1-0.20250403101815-48f49608759d h1:TG+vzggDyx6daMy8w/qXwCvHfgPdSzZoCICqQhAFjPI=
-github.com/korfairo/migratory v1.0.1-0.20250403101815-48f49608759d/go.mod h1:u681PuziW8tgmgBubpmvDfNLNE6ZSUmi+K4I90bNcIk=
+github.com/evgodev/migratory v0.0.0-20250128094014-5ba55ae6f6a7 h1:vzjkLnGeXlwJ+V2Ua5QqeFrpPRsFBjAXm8yyyyXSP30=
+github.com/evgodev/migratory v0.0.0-20250128094014-5ba55ae6f6a7/go.mod h1:j2nGNy1okt3gMDzTmtog8s1qH74KwUjCwaGz9KP33a0=
+github.com/evgodev/migratory v1.0.1-0.20250403101815-48f49608759d h1:TG+vzggDyx6daMy8w/qXwCvHfgPdSzZoCICqQhAFjPI=
+github.com/evgodev/migratory v1.0.1-0.20250403101815-48f49608759d/go.mod h1:u681PuziW8tgmgBubpmvDfNLNE6ZSUmi+K4I90bNcIk=
 github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
 github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/korfairo/migratory/internal/migrator"
+	"github.com/evgodev/migratory/internal/migrator"
 	"gopkg.in/yaml.v3"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	cfg "github.com/korfairo/migratory/internal/config"
+	cfg "github.com/evgodev/migratory/internal/config"
 	"github.com/spf13/cobra"
 )
 

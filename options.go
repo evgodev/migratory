@@ -1,6 +1,6 @@
 package migratory
 
-import "github.com/korfairo/migratory/internal/migrator"
+import "github.com/evgodev/migratory/internal/migrator"
 
 const (
 	Postgres   Dialect = migrator.Postgres

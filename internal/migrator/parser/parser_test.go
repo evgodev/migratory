@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/korfairo/migratory/internal/require"
+	"github.com/evgodev/migratory/internal/require"
 )
 
 const (
