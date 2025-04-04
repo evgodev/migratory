@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/korfairo/migratory"
-	_ "github.com/korfairo/migratory/example/go-migrations/migrations"
+	"github.com/evgodev/migratory"
+	_ "github.com/evgodev/migratory/example/go-migrations/migrations"
 	_ "github.com/lib/pq"
 )
 

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/korfairo/migratory"
+	"github.com/evgodev/migratory"
 	_ "github.com/lib/pq"
 )
 
